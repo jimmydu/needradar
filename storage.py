@@ -78,6 +78,9 @@ class Cluster(Base):
     confidence = Column(Float)
     accessibility = Column(Float)
     final_score = Column(Float)
+    software_fit = Column(Float)
+    fit_method = Column(String(16))
+    entry_point = Column(Text)
     window_start = Column(DateTime)
     window_end = Column(DateTime)
     created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
@@ -100,6 +103,13 @@ def _migrate(engine):
     if "rating" not in cols:
         with engine.begin() as conn:
             conn.execute(text("ALTER TABLE raw_signals ADD COLUMN rating INTEGER"))
+    ccols = {c["name"] for c in inspect(engine).get_columns("clusters")}
+    for col, ddl in (("software_fit", "ALTER TABLE clusters ADD COLUMN software_fit FLOAT"),
+                     ("fit_method", "ALTER TABLE clusters ADD COLUMN fit_method VARCHAR(16)"),
+                     ("entry_point", "ALTER TABLE clusters ADD COLUMN entry_point TEXT")):
+        if col not in ccols:
+            with engine.begin() as conn:
+                conn.execute(text(ddl))
 
 
 def get_session(engine=None):

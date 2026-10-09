@@ -52,11 +52,19 @@ KEYWORD_BUCKETS = {
     "招聘/外包人力": {"hire", "hiring", "freelancer", "contractor", "developer", "designer"},
 }
 
-_TOKEN_RE = re.compile(r"[a-z0-9][a-z0-9'\-]{1,}|[一-鿿]{2,}")
+_CJK_RE = re.compile(r"[一-鿿]+")
+_TOKEN_RE = re.compile(r"[a-z0-9][a-z0-9'\-]{1,}|[一-鿿]+")
 
 
 def tokenize(text):
-    return {t for t in _TOKEN_RE.findall((text or "").lower()) if t not in STOPWORDS}
+    tokens = set()
+    for tok in _TOKEN_RE.findall((text or "").lower()):
+        if _CJK_RE.fullmatch(tok):
+            # no segmentation for CJK: use char bigrams so similar phrases overlap
+            tokens.update(tok[i:i + 2] for i in range(len(tok) - 1))
+        elif tok not in STOPWORDS:
+            tokens.add(tok)
+    return tokens
 
 
 def doc_text(signal, extraction):
@@ -106,14 +114,19 @@ def _jaccard(a, b):
 
 
 def cluster_signals(members, jaccard_threshold=0.3):
-    """members: list of (signal, extraction, raw_dict). Returns list of clusters,
-    each a list of member tuples."""
+    """members: list of (signal, extraction, raw_dict). Returns list of
+    (bucket_key, cluster_members) tuples."""
     buckets = defaultdict(list)
     for m in members:
         buckets[bucket_key(*m)].append(m)
 
     clusters = []
     for key, group in buckets.items():
+        if key.startswith("kw:"):
+            # the keyword topic itself is the demand theme; app/source-specific
+            # sub-clusters stay available via the members' raw fields
+            clusters.append((key, group))
+            continue
         token_sets = [tokenize(doc_text(s, e) + " " + (s.title or "")) for s, e, _ in group]
         uf = UnionFind(range(len(group)))
         for i in range(len(group)):
@@ -123,7 +136,7 @@ def cluster_signals(members, jaccard_threshold=0.3):
         merged = defaultdict(list)
         for i, m in enumerate(group):
             merged[uf.find(i)].append(m)
-        clusters.extend(merged.values())
+        clusters.extend((key, c) for c in merged.values())
     return clusters
 
 
@@ -135,8 +148,9 @@ def cluster_tokens(cluster):
 
 
 def find_merge_candidates(clusters, threshold=0.2, max_pairs=30):
-    """Cross-bucket cluster pairs with high token overlap, for LLM arbitration."""
-    cents = [cluster_tokens(c) for c in clusters]
+    """Cross-bucket cluster pairs with high token overlap, for LLM arbitration.
+    clusters: list of (bucket_key, members)."""
+    cents = [cluster_tokens(m) for _, m in clusters]
     sets = [set(c) for c in cents]
     pairs = []
     for i in range(len(clusters)):

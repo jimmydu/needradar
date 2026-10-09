@@ -38,8 +38,9 @@ LLM config (OpenAI-compatible): `OPENAI_API_KEY` (required), `OPENAI_BASE_URL` (
 `run_rank.py` clusters signals into demand themes and ranks them per PRD §7–§9:
 
 - **Clustering** (`aggregator/clustering.py`): rules first — structured buckets (CFPB issue, NAICS, app/subreddit) + curated keyword topics, then union-find on token Jaccard (≥0.3) within buckets. The LLM only arbitrates a capped batch (~30 pairs, ~3 calls) of cross-bucket merge candidates; it never processes signals one by one. Text sources without an extracted pain point are excluded as noise.
-- **Scoring** (`aggregator/scoring.py`): WPS = 0.35·P-strength + 0.25·density (weekly-decayed count / candidate median) + 0.15·source-diversity + 0.10·amount-strength + 0.10·trend-persistence + 0.05·geo-HHI; confidence and accessibility per §9.3/§9.4; final = WPS × confidence × accessibility. Candidate pool P_max ≥ P3.
-- Results persist to the `clusters` table (idempotent per `run_date`) and a Markdown report is exported to `reports/top10_YYYYMMDD.md` with verbatim evidence quotes, plus a pure-WPS board (§9.5).
+- **Scoring** (`aggregator/scoring.py`): WPS = 0.35·P-strength + 0.25·density (weekly-decayed count / candidate median) + 0.15·source-diversity + 0.10·amount-strength + 0.10·trend-persistence + 0.05·geo-HHI; confidence and accessibility per §9.3/§9.4.
+- **Software fit** (`aggregator/fit.py`): 0–1 rule score for indie-developer deliverability — physical-goods keywords and numeric PSC codes score ~0.1, SAM.gov PSC 'D' (IT services) 0.65, software keywords + consumer/SMB sources push up, licensed industries push down; ambiguous near-top clusters go to LLM arbitration (a few batched calls). Final = WPS × confidence × accessibility × software_fit.
+- Results persist to the `clusters` table (idempotent per `run_date`) and a Markdown report is exported to `reports/topN_YYYYMMDD.md` (main board + pure-WPS Top 20, per-item entry-point suggestions, verbatim evidence quotes).
 
 ```bash
 python run_rank.py                    # Top 10, 4-week window
@@ -119,11 +120,12 @@ LLM 配置（OpenAI 兼容接口）：`OPENAI_API_KEY`（必需）、`OPENAI_BAS
 `run_rank.py` 把信号聚类为需求主题并按 PRD §7–§9 打分排序：
 
 - **聚类**（`aggregator/clustering.py`）：规则优先——结构化分桶（CFPB issue、NAICS、App/subreddit）+ 领域关键词主题，桶内按 token Jaccard（≥0.3）并查集合并。LLM 只对少量跨桶合并候选对（上限约 30 对、约 3 次调用）做归并裁决，不逐条处理信号。无 pain_point 的文本源信号（好评/未抽取）作为噪音排除。
-- **打分**（`aggregator/scoring.py`）：WPS = 0.35·等级强度 + 0.25·密度（周衰减加权/候选池中位数）+ 0.15·来源多样性 + 0.10·金额线索 + 0.10·趋势持续性 + 0.05·地域集中度；置信度与可进入性按 §9.3/§9.4；最终分 = WPS × 置信度 × 可进入性；候选池 P_max ≥ P3。
-- 结果落 `clusters` 表（按 `run_date` 幂等重跑），并导出 `reports/top10_YYYYMMDD.md`（含原文引用与纯 WPS 榜，§9.5）。
+- **打分**（`aggregator/scoring.py`）：WPS = 0.35·等级强度 + 0.25·密度（周衰减加权/候选池中位数）+ 0.15·来源多样性 + 0.10·金额线索 + 0.10·趋势持续性 + 0.05·地域集中度；置信度与可进入性按 §9.3/§9.4。
+- **代码可行性**（`aggregator/fit.py`）：0–1 规则分，衡量独立开发者可否纯软件交付——实物/物料关键词与数字 PSC 码约 0.1，SAM.gov PSC 以 D 开头（IT 服务）0.65，软件关键词 + 消费/SMB 来源加分，牌照行业减分；顶部分数模糊（0.3–0.65）的簇交 LLM 批量裁决。最终分 = WPS × 置信度 × 可进入性 × 代码可行性。
+- 结果落 `clusters` 表（按 `run_date` 幂等重跑），导出 `reports/top50_YYYYMMDD.md`（主榜 Top 50 + 纯 WPS 榜 Top 20，每条含切入点建议与原文引用）。
 
 ```bash
-python run_rank.py                     # Top 10，4 周窗口
+python run_rank.py                     # Top 50，4 周窗口
 python run_rank.py --top 20 --dry-run  # 不写库不调 LLM
 ```
 
@@ -169,6 +171,7 @@ source_id 为 `manual_` + title/platform/url 的哈希，同一信号重复录�
 - `run_extract.py` — 抽取入口（--source/--limit/--force/--dry-run/--no-llm）
 - `aggregator/clustering.py` — 聚类（关键词/结构化预分组 + Jaccard 并查集 + LLM 合并裁决）
 - `aggregator/scoring.py` — WPS / 置信度 / 可进入性打分（PRD §9.2–9.5 原公式）
+- `aggregator/fit.py` — 代码可行性打分（实物/PSC/软件关键词规则 + LLM 边界裁决 + 切入点生成）
 - `aggregator/pipeline.py` — 聚合流水线（窗口加载 → 聚类 → 打分 → 落 clusters 表）
 - `run_rank.py` — 排序入口（--top/--weeks/--dry-run/--no-llm，导出 reports/top10_*.md）
 - `manual_entry.py` — 手动信号录入 CLI（交互式 + `--import` JSON 批量导入，source='manual'，哈希去重）

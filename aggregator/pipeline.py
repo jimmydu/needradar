@@ -10,7 +10,7 @@ from datetime import date, datetime, timedelta
 
 import requests
 
-from aggregator import scoring
+from aggregator import fit, scoring
 from aggregator.clustering import cluster_signals, cluster_tokens, find_merge_candidates
 from storage import Cluster, Extraction, RawSignal
 
@@ -55,15 +55,18 @@ def _chat_json(system, user, timeout=None):
 
 
 def _cluster_brief(cluster, max_items=3):
-    kws = [k for k, _ in cluster_tokens(cluster).most_common(8)]
+    """cluster: (bucket_key, members)."""
+    key, members = cluster
+    kws = [k for k, _ in cluster_tokens(members).most_common(8)]
     reps = []
-    for s, e, _ in sorted(cluster, key=lambda m: -(m[1].p_level or 0)):
+    for s, e, _ in sorted(members, key=lambda m: -(m[1].p_level or 0)):
         text = (e.pain_point or s.title or "").strip()
         if text and text not in reps:
             reps.append(text[:150])
         if len(reps) >= max_items:
             break
-    return kws, reps
+    topic = key[3:] if key.startswith("kw:") else None
+    return kws, reps, topic
 
 
 def llm_arbitrate(clusters, pairs, usage):
@@ -74,10 +77,10 @@ def llm_arbitrate(clusters, pairs, usage):
         batch = pairs[start:start + BATCH]
         lines = []
         for n, (i, j, _) in enumerate(batch, 1):
-            ki, ri = _cluster_brief(clusters[i], 2)
-            kj, rj = _cluster_brief(clusters[j], 2)
-            lines.append(f"第{n}对\nA 关键词: {', '.join(ki)}; 痛点: {' / '.join(ri)}\n"
-                         f"B 关键词: {', '.join(kj)}; 痛点: {' / '.join(rj)}")
+            ki, ri, ti = _cluster_brief(clusters[i], 2)
+            kj, rj, tj = _cluster_brief(clusters[j], 2)
+            lines.append(f"第{n}对\nA 主题: {ti or '-'}; 关键词: {', '.join(ki)}; 痛点: {' / '.join(ri)}\n"
+                         f"B 主题: {tj or '-'}; 关键词: {', '.join(kj)}; 痛点: {' / '.join(rj)}")
         try:
             parsed, ptok, ctok = _chat_json(MERGE_SYSTEM, "\n\n".join(lines))
             usage["calls"] += 1
@@ -98,9 +101,14 @@ def apply_merges(clusters, merges):
     for i, j in merges:
         uf.union(i, j)
     merged = {}
-    for idx, c in enumerate(clusters):
-        merged.setdefault(uf.find(idx), []).extend(c)
-    return list(merged.values())
+    for idx, (key, members) in enumerate(clusters):
+        root = uf.find(idx)
+        if root not in merged:
+            merged[root] = [key, []]
+        merged[root][1].extend(members)
+        if not merged[root][0].startswith("kw:") and key.startswith("kw:"):
+            merged[root][0] = key  # prefer the named topic as the cluster key
+    return [(k, m) for k, m in merged.values()]
 
 
 def load_window_members(session, weeks=4, window_end=None):
@@ -111,7 +119,10 @@ def load_window_members(session, weeks=4, window_end=None):
             .all())
     members = []
     for s, e in rows:
-        # text sources without an extracted pain point are noise for theming
+        # text sources without an extracted pain point are noise for theming;
+        # chart snapshots are market-direction evidence, not themes themselves
+        if s.source == "appstore_charts":
+            continue
         if s.source in ("appstore", "reddit_rss", "reddit") and not e.pain_point:
             continue
         ts = s.posted_at or s.fetched_at
@@ -137,6 +148,75 @@ def evidence_quotes(cluster, max_quotes=3):
     return quotes
 
 
+def _fit_arbitrate(results, usage, batch=15):
+    """LLM re-scores ambiguous software_fit values in place."""
+    for start in range(0, len(results), batch):
+        chunk = results[start:start + batch]
+        lines = []
+        for n, r in enumerate(chunk, 1):
+            lines.append(f"{n}. 关键词: {', '.join(r['keywords'][:8])}｜"
+                         f"代表痛点: {r['summary'][:120]}｜来源: {dict(r['stats']['sources'])}")
+        try:
+            parsed, ptok, ctok = _chat_json(fit.FIT_ARBITRATION_SYSTEM, "\n".join(lines))
+            usage["calls"] += 1
+            usage["prompt_tokens"] += ptok
+            usage["completion_tokens"] += ctok
+            by_id = {m.get("id"): m for m in parsed.get("fits", [])}
+            for n, r in enumerate(chunk, 1):
+                m = by_id.get(n)
+                if not m:
+                    continue
+                try:
+                    val = float(m.get("fit"))
+                except (TypeError, ValueError):
+                    continue
+                if 0 <= val <= 1:
+                    r["software_fit"] = round(val, 3)
+                    r["fit_method"] = "llm"
+                    r["fit_note"] = m.get("note")
+        except Exception as e:
+            log.warning("fit arbitration batch failed: %s", e)
+
+
+def _rule_entry_point(r):
+    st = r["stats"]
+    kw = r["keywords"][0] if r["keywords"] else r["summary"][:20]
+    audience = None
+    for _, e, _ in r["cluster"]:
+        if e.audience:
+            audience = e.audience
+            break
+    who = audience or "目标用户"
+    if r["software_fit"] >= 0.7:
+        return f"做面向{who}的「{kw}」工具/SaaS，先落地页预售验证"
+    if r["software_fit"] >= 0.4:
+        return f"围绕「{kw}」做信息聚合/自动化工具，软件为主、线下交付外包"
+    if r["fit_method"] == "rule_gov_it":
+        return f"「{kw}」政府 IT 方向：先做投标信息聚合/合规工具，承包需资质"
+    return f"「{kw}」不适合纯软件切入，可做比价/投标信息聚合等周边工具"
+
+
+def _llm_entry_points(results, usage, batch=25):
+    for start in range(0, len(results), batch):
+        chunk = results[start:start + batch]
+        lines = []
+        for n, r in enumerate(chunk, 1):
+            lines.append(f"{n}. 关键词: {', '.join(r['keywords'][:8])}｜"
+                         f"代表痛点: {r['summary'][:120]}｜"
+                         f"来源: {dict(r['stats']['sources'])}｜代码可行性: {r['software_fit']}")
+        try:
+            parsed, ptok, ctok = _chat_json(fit.ENTRY_POINT_SYSTEM, "\n".join(lines))
+            usage["calls"] += 1
+            usage["prompt_tokens"] += ptok
+            usage["completion_tokens"] += ctok
+            by_id = {m.get("id"): m.get("entry") for m in parsed.get("entries", [])}
+            for n, r in enumerate(chunk, 1):
+                if by_id.get(n):
+                    r["entry_point"] = by_id[n]
+        except Exception as e:
+            log.warning("entry point batch failed: %s", e)
+
+
 def run(session, weeks=4, use_llm=True, dry_run=False, run_date=None):
     usage = {"calls": 0, "prompt_tokens": 0, "completion_tokens": 0}
     run_date = run_date or date.today().isoformat()
@@ -158,37 +238,55 @@ def run(session, weeks=4, use_llm=True, dry_run=False, run_date=None):
         log.warning("OPENAI_API_KEY not set; skipping merge arbitration")
 
     # score all clusters; candidate pool = P_max >= P3
-    stats_all = [scoring.cluster_stats(c, None, window_end) for c in clusters]
+    stats_all = [scoring.cluster_stats(m, None, window_end) for _, m in clusters]
     all_decayed = [st["decayed"] for st in stats_all if st["p_max"] and st["p_max"] >= 3]
     results = []
-    for cluster, st in zip(clusters, stats_all):
+    for (key, members), st in zip(clusters, stats_all):
         if not st["p_max"] or st["p_max"] < 3:
             continue
         wps = scoring.wps_score(st, all_decayed)
         conf = scoring.confidence_score(st)
         acc = scoring.accessibility_score(st)
-        kws, reps = _cluster_brief(cluster)
+        fit_val, fit_method, fit_note = fit.rule_software_fit(members, st)
+        kws, reps, topic = _cluster_brief((key, members))
         results.append({
-            "cluster": cluster, "stats": st, **wps,
+            "cluster": members, "topic": topic, "stats": st, **wps,
             "confidence": conf, "accessibility": acc,
-            "final_score": round(wps["wps"] * conf * acc, 4),
-            "name": "、".join(kws[:3]),
-            "summary": reps[0] if reps else "、".join(kws[:3]),
+            "software_fit": fit_val, "fit_method": fit_method, "fit_note": fit_note,
+            "final_score": round(wps["wps"] * conf * acc * fit_val, 4),
+            "name": topic or "、".join(kws[:3]),
+            "summary": (f"{topic}：{reps[0]}" if topic and reps else
+                        (topic or (reps[0] if reps else "、".join(kws[:3])))),
             "keywords": kws,
-            "quotes": evidence_quotes(cluster),
+            "quotes": evidence_quotes(members),
         })
+
+    # LLM arbitration for ambiguous-fit clusters near the top (cost-capped)
+    if use_llm and _llm_configured():
+        results.sort(key=lambda r: -(r["wps"] * r["confidence"] * r["accessibility"]))
+        ambiguous = [r for r in results[:120] if 0.3 < r["software_fit"] < 0.65]
+        _fit_arbitrate(ambiguous, usage)
+        for r in results:
+            r["final_score"] = round(r["wps"] * r["confidence"]
+                                     * r["accessibility"] * r["software_fit"], 4)
+
+    # entry points: rule template for all, LLM polish for the visible top
     results.sort(key=lambda r: -r["final_score"])
+    for r in results:
+        r["entry_point"] = _rule_entry_point(r)
+    if use_llm and _llm_configured():
+        _llm_entry_points(results[:50], usage)
 
     if not dry_run:
         session.query(Cluster).filter(Cluster.run_date == run_date).delete()
         for r in results:
-            c = r["cluster"]
+            members = r["cluster"]
             st = r["stats"]
             session.add(Cluster(
                 run_date=run_date,
                 name=r["name"], summary=r["summary"],
                 keywords_json=json.dumps(r["keywords"], ensure_ascii=False),
-                member_ids=json.dumps([s.id for s, _, _ in c]),
+                member_ids=json.dumps([s.id for s, _, _ in members]),
                 sources_json=json.dumps(dict(st["sources"]), ensure_ascii=False),
                 p_dist_json=json.dumps({str(k): v for k, v in st["p_dist"].items()}),
                 n_signals=st["n"], p_max=st["p_max"],
@@ -198,6 +296,8 @@ def run(session, weeks=4, use_llm=True, dry_run=False, run_date=None):
                 wps_trend=r["wps_trend"], wps_geo=r["wps_geo"], wps=r["wps"],
                 confidence=r["confidence"], accessibility=r["accessibility"],
                 final_score=r["final_score"],
+                software_fit=r["software_fit"], fit_method=r["fit_method"],
+                entry_point=r["entry_point"],
                 window_start=window_start, window_end=window_end,
             ))
         session.commit()
