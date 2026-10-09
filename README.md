@@ -17,6 +17,22 @@ This repository contains the data collection layer. All collectors use **officia
 
 Data handling: read-only collection, aggregate statistical analysis only, no redistribution of raw content, no user profiling. Collected records are stored in a private local database and refreshed per each platform's API terms.
 
+## Signal extraction
+
+`run_extract.py` turns raw signals into structured demand fields (table `extractions`, one row per signal):
+
+- **Rules first** (`extractor/rules.py`): money already paid → P5 (USAspending, SAM.gov awards, completed freelance jobs, funded crowdfunding); committed budget / active solicitation → P4 (SAM.gov solicitations, freelance posts with budget); explicit money intent in text → P3 (regex on `$` amounts, hourly rates, budget context). Rule decisions win over the LLM.
+- **LLM** (`extractor/llm.py`) only fills semantic fields (pain point, audience, scenario, urgency, current solution, alternatives, supply gap). Every non-empty field must carry a verbatim evidence quote from the original text; unquotable fields are forced empty.
+- Cost controls: LLM runs only on text-bearing sources (app store reviews rated ≤3, Reddit posts, manual entries, freelance listings); structured/title-only sources (SAM.gov, USAspending, CFPB, charts) never call the LLM. Token usage is stored per row in `extractions` for cost accounting.
+
+```bash
+python run_extract.py --dry-run --limit 50   # rules only, nothing written
+python run_extract.py --no-llm               # rules only, write results
+python run_extract.py --source appstore --limit 50
+```
+
+LLM config (OpenAI-compatible): `OPENAI_API_KEY` (required), `OPENAI_BASE_URL` (optional), `OPENAI_MODEL` (default `gpt-4o-mini`). No keys are hardcoded or logged.
+
 ---
 
 # NeedRadar — 采集层 MVP（中文）
@@ -68,6 +84,23 @@ python run_daily.py --from 2026-10-01 --to 2026-10-08
 
 注意 SAM.gov 非联邦 key 配额约 10 次/天，采集器按 ptype 分页、limit=1000，配额耗尽时优雅停止不崩溃。App Store RSS 端点免认证但每 App 只有最近约 500 条评论。重复运行通过 (source, source_id) 唯一约束去重，已存在的数据跳过。
 
+## 信号抽取
+
+`run_extract.py` 把原始信号抽取为结构化需求字段（`extractions` 表，每条信号一行，`signal_id` 主键幂等，重复跑自动跳过）：
+
+- **规则优先**（`extractor/rules.py`）：已发生付费 → P5（USAspending、SAM.gov 中标、已完成外包、已筹得众筹）；明确预算/在途招标 → P4（SAM.gov 招标、带预算的外包发布）；文本中的明确金钱意向 → P3（`$` 金额、时薪、预算语境正则，同时抽 `cost_hint`）。规则判定优先于 LLM。
+- **LLM 只做语义字段**（`extractor/llm.py`）：痛点、人群、场景、紧急度、现有方案、替代方案、供给不足。每个非空字段必须带原文逐字引用（evidence quote），无法引用的字段强制置空，防止编造。
+- 成本控制：LLM 只处理有正文的源（App Store ≤3 星评论、Reddit 帖子、手动录入、外包项目）；纯标题/结构化源（SAM.gov、USAspending、CFPB、榜单）不调 LLM。每次调用的 token 用量落 `extractions` 表，便于核算成本。
+
+```bash
+python run_extract.py --dry-run --limit 50   # 只跑规则、打印，不写库
+python run_extract.py --no-llm               # 只跑规则并写库
+python run_extract.py --source appstore --limit 50   # 规则 + LLM（仅 ≤3 星评论）
+python run_extract.py --force                # 重抽已有结果
+```
+
+LLM 配置（OpenAI 兼容接口）：`OPENAI_API_KEY`（必需）、`OPENAI_BASE_URL`（可选，可指向任何兼容端点）、`OPENAI_MODEL`（默认 `gpt-4o-mini`）。不硬编码任何 key。
+
 ## 手动录入
 
 无合法 API 的高价值源（如 Kickstarter most-funded 榜单）人工浏览后手动录入，入 `raw_signals` 表（source='manual'），与自动采集走同一去重和后续流程。
@@ -104,6 +137,10 @@ source_id 为 `manual_` + title/platform/url 的哈希，同一信号重复录�
 - `collectors/reddit.py` — Reddit 帖子（官方 Data API，OAuth client_credentials，signal_type=post，raw_json 含 score/num_comments/link_flair_text；当前审批制，有凭证才跑）
 - `collectors/freelancer.py` — Freelancer.com 活跃项目（官方 API，`freelancer-oauth-v1` header，signal_type=外包发布/已完成外包，raw_json 含 budget/bids/雇主国家/技能标签）
 - `storage.py` — SQLAlchemy 模型与落库（raw_signals 表；启动时自动补 `rating` 列迁移）
+- `extractor/rules.py` — 规则抽取（P 级判定 + 金额/预算 cost_hint 正则）
+- `extractor/llm.py` — LLM 语义抽取（OpenAI 兼容，evidence quote 契约，token 计量）
+- `extractor/pipeline.py` — 抽取流水线（规则全量 + 按源策略调 LLM + 写 extractions 表）
+- `run_extract.py` — 抽取入口（--source/--limit/--force/--dry-run/--no-llm）
 - `manual_entry.py` — 手动信号录入 CLI（交互式 + `--import` JSON 批量导入，source='manual'，哈希去重）
 - `signals.example.json` — 批量导入格式示例
 - `run_daily.py` — 每日入口；各采集器的 `collect(date_from, date_to, session)` 是纯函数，之后可直接包装为 Prefect task。

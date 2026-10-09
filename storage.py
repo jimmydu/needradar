@@ -2,7 +2,8 @@ import os
 from datetime import datetime, timezone
 
 from sqlalchemy import (
-    Column, DateTime, Float, Integer, String, Text, UniqueConstraint, create_engine,
+    Column, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint,
+    create_engine,
 )
 from sqlalchemy.orm import declarative_base, sessionmaker
 
@@ -29,6 +30,28 @@ class RawSignal(Base):
     url = Column(Text)
     rating = Column(Integer)
     raw_json = Column(Text)
+
+
+class Extraction(Base):
+    __tablename__ = "extractions"
+
+    signal_id = Column(Integer, ForeignKey("raw_signals.id"), primary_key=True)
+    p_level = Column(Integer)          # 1-5, None = 规则与 LLM 均未判定
+    p_method = Column(String(8))       # rule / llm / none
+    cost_hint = Column(Text)
+    audience = Column(Text)
+    scenario = Column(Text)
+    pain_point = Column(Text)
+    urgency = Column(String(8))
+    current_solution = Column(Text)
+    alternatives = Column(Text)
+    supply_gap = Column(Text)
+    evidence_json = Column(Text)       # {field: quote}，LLM 输出的原文引用
+    model = Column(String(64))
+    prompt_tokens = Column(Integer, default=0)
+    completion_tokens = Column(Integer, default=0)
+    llm_raw = Column(Text)
+    extracted_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
 
 
 def get_engine(url=None):
