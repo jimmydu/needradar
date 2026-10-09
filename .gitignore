@@ -1,0 +1,7 @@
+sam.gov.api.key
+freelancer.api.key
+*.db
+.env
+__pycache__/
+.venv/
+*.egg-info/

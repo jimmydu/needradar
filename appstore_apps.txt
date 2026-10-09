@@ -1,0 +1,9 @@
+# App Store 监控清单：每行 app_id  # 注释
+584606479  # Intuit QuickBooks for Business
+618783545  # Slack
+586683407  # Microsoft Excel
+335393788  # Square Point of Sale
+371294472  # Shopify
+1451094657 # Calendly: Meeting Scheduling
+1232780281 # Notion
+897446215  # Canva

@@ -1,0 +1,11 @@
+# Reddit 监控 subreddit 清单：每行一个 sub 名
+smallbusiness
+Entrepreneur
+SaaS
+bookkeeping
+construction
+landscaping
+HVAC
+weddingplanning
+ems
+legaladvice
