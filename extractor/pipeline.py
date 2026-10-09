@@ -6,8 +6,6 @@ import logging
 import time
 from datetime import datetime
 
-from sqlalchemy import text as sql_text
-
 from extractor import llm, rules
 from storage import Extraction, RawSignal
 
