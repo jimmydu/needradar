@@ -68,6 +68,32 @@ python run_daily.py --from 2026-10-01 --to 2026-10-08
 
 注意 SAM.gov 非联邦 key 配额约 10 次/天，采集器按 ptype 分页、limit=1000，配额耗尽时优雅停止不崩溃。App Store RSS 端点免认证但每 App 只有最近约 500 条评论。重复运行通过 (source, source_id) 唯一约束去重，已存在的数据跳过。
 
+## 手动录入
+
+无合法 API 的高价值源（如 Kickstarter most-funded 榜单）人工浏览后手动录入，入 `raw_signals` 表（source='manual'），与自动采集走同一去重和后续流程。
+
+```bash
+python manual_entry.py                      # 交互式，逐字段提示，可连续录入多条
+python manual_entry.py --import signals.json  # 批量导入（参考 signals.example.json）
+```
+
+批量导入 JSON 为数组，每项字段：
+
+| 字段 | 必填 | 说明 |
+|---|---|---|
+| title | 是 | 标题 |
+| platform | 是 | 来源平台（kickstarter / indiegogo / 朋友推荐 / 自由文本） |
+| url | 否 | 证据链接 |
+| description | 否 | 描述 |
+| amount | 否 | 金额线索（数字） |
+| amount_note | 否 | 金额说明原文，进 raw_json |
+| signal_type | 是 | 1=外包发布 2=众筹预售 3=招标/采购 4=付费抱怨/求推荐 5=其他（也可直接写中文值） |
+| p_level | 否 | 付费信号等级 1-5，不确定留空，后续自动判定 |
+| posted_at | 否 | YYYY-MM-DD，默认今天 |
+| notes | 否 | 备注，进 raw_json |
+
+source_id 为 `manual_` + title/platform/url 的哈希，同一信号重复录入自动跳过。
+
 ## 结构
 
 - `collectors/sam_gov.py` — SAM.gov Get Opportunities API v2
@@ -78,4 +104,6 @@ python run_daily.py --from 2026-10-01 --to 2026-10-08
 - `collectors/reddit.py` — Reddit 帖子（官方 Data API，OAuth client_credentials，signal_type=post，raw_json 含 score/num_comments/link_flair_text；当前审批制，有凭证才跑）
 - `collectors/freelancer.py` — Freelancer.com 活跃项目（官方 API，`freelancer-oauth-v1` header，signal_type=外包发布/已完成外包，raw_json 含 budget/bids/雇主国家/技能标签）
 - `storage.py` — SQLAlchemy 模型与落库（raw_signals 表；启动时自动补 `rating` 列迁移）
+- `manual_entry.py` — 手动信号录入 CLI（交互式 + `--import` JSON 批量导入，source='manual'，哈希去重）
+- `signals.example.json` — 批量导入格式示例
 - `run_daily.py` — 每日入口；各采集器的 `collect(date_from, date_to, session)` 是纯函数，之后可直接包装为 Prefect task。
