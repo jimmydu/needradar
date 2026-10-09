@@ -1,4 +1,25 @@
-# NeedRadar — 采集层 MVP
+# NeedRadar — Data Collection Layer
+
+**English** | 中文说明见下文
+
+NeedRadar is an independent market research tool that aggregates public data to identify demand signals — problems people are actively willing to pay to solve. It produces weekly aggregate trend reports for internal research.
+
+This repository contains the data collection layer. All collectors use **official APIs or public data feeds only** — no unauthorized scraping:
+
+| Source | Access | Signal type |
+|---|---|---|
+| SAM.gov | Official API (free key) | Government solicitations & awards |
+| USAspending.gov | Official public API (no key) | Federal contract spending |
+| CFPB Complaints | Official public API (no key) | Consumer complaints (structured fields) |
+| App Store | Apple official RSS feed | App reviews + top-grossing chart snapshots |
+| Reddit | Official Data API (`collectors/reddit.py`, OAuth2) — pending Responsible Builder Policy approval; public RSS used as interim fallback (`collectors/reddit_rss.py`) | Community pain-point posts |
+| Freelancer.com | Official API (approval pending) | Outsourcing project listings & budgets |
+
+Data handling: read-only collection, aggregate statistical analysis only, no redistribution of raw content, no user profiling. Collected records are stored in a private local database and refreshed per each platform's API terms.
+
+---
+
+# NeedRadar — 采集层 MVP（中文）
 
 每日采集美国公开市场数据（SAM.gov 机会公告、USAspending 合同授予、App Store 评论、Reddit 帖子），落库到 `raw_signals` 表，供后续信号抽取层使用。
 
