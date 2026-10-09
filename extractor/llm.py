@@ -7,6 +7,7 @@ Every call's token usage is returned so callers can persist cost data.
 import json
 import logging
 import os
+import re
 
 import requests
 
@@ -106,14 +107,17 @@ def extract_semantics(signal, timeout=None):
     parsed = json.loads(raw)
 
     fields, evidence = {}, {}
+    source_text = re.sub(r"\s+", " ", f"{signal.title or ''} {signal.description or ''}")
     for key in ("pain_point", "audience", "scenario", "urgency",
                 "current_solution", "alternatives", "supply_gap"):
         node = parsed.get(key) or {}
         value = (node.get("value") or "").strip()
         ev = (node.get("evidence") or "").strip()
-        # enforce the evidence contract: no quote -> no value
-        if value and not ev:
+        # evidence contract: quote must exist and be verbatim from the source
+        # (whitespace-normalized), otherwise the field is dropped
+        if value and (not ev or re.sub(r"\s+", " ", ev) not in source_text):
             value = ""
+            ev = ""
         fields[key] = value
         evidence[key] = ev
 
