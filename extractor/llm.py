@@ -64,6 +64,11 @@ def extract_semantics(signal, timeout=60):
         raise LLMNotConfigured("OPENAI_API_KEY not set")
 
     description = (signal.description or "")[:4000]
+    # kimi-k2.x models reject temperature != 1; allow env override otherwise
+    temperature = float(os.environ.get(
+        "OPENAI_TEMPERATURE",
+        "1" if MODEL.startswith("kimi") else "0",
+    ))
     resp = requests.post(
         f"{BASE_URL}/chat/completions",
         headers={"Authorization": f"Bearer {API_KEY}"},
@@ -77,12 +82,14 @@ def extract_semantics(signal, timeout=60):
                     description=description or "(无正文)",
                 )},
             ],
-            "temperature": 0,
+            "temperature": temperature,
             "response_format": {"type": "json_object"},
         },
         timeout=timeout,
     )
-    resp.raise_for_status()
+    if resp.status_code >= 400:
+        log.warning("LLM HTTP %s: %s", resp.status_code, resp.text[:500])
+        resp.raise_for_status()
     body = resp.json()
     usage = body.get("usage") or {}
     raw = body["choices"][0]["message"]["content"]
