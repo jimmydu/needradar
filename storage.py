@@ -54,6 +54,35 @@ class Extraction(Base):
     extracted_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
 
 
+class Cluster(Base):
+    __tablename__ = "clusters"
+
+    id = Column(Integer, primary_key=True)
+    run_date = Column(String(10), nullable=False, index=True)  # YYYY-MM-DD，同日重跑覆盖
+    name = Column(Text)
+    summary = Column(Text)
+    keywords_json = Column(Text)     # [kw, ...]
+    member_ids = Column(Text)        # JSON [raw_signals.id, ...]
+    sources_json = Column(Text)      # {source: count}
+    p_dist_json = Column(Text)       # {"3": n, "4": n, "5": n}
+    n_signals = Column(Integer)
+    p_max = Column(Integer)
+    median_amount = Column(Float)
+    wps_p = Column(Float)
+    wps_density = Column(Float)
+    wps_diversity = Column(Float)
+    wps_amount = Column(Float)
+    wps_trend = Column(Float)
+    wps_geo = Column(Float)
+    wps = Column(Float)
+    confidence = Column(Float)
+    accessibility = Column(Float)
+    final_score = Column(Float)
+    window_start = Column(DateTime)
+    window_end = Column(DateTime)
+    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+
+
 def get_engine(url=None):
     return create_engine(url or DATABASE_URL)
 

@@ -33,6 +33,19 @@ python run_extract.py --source appstore --limit 50
 
 LLM config (OpenAI-compatible): `OPENAI_API_KEY` (required), `OPENAI_BASE_URL` (optional), `OPENAI_MODEL` (default `gpt-4o-mini`). No keys are hardcoded or logged.
 
+## Aggregation & WPS ranking
+
+`run_rank.py` clusters signals into demand themes and ranks them per PRD §7–§9:
+
+- **Clustering** (`aggregator/clustering.py`): rules first — structured buckets (CFPB issue, NAICS, app/subreddit) + curated keyword topics, then union-find on token Jaccard (≥0.3) within buckets. The LLM only arbitrates a capped batch (~30 pairs, ~3 calls) of cross-bucket merge candidates; it never processes signals one by one. Text sources without an extracted pain point are excluded as noise.
+- **Scoring** (`aggregator/scoring.py`): WPS = 0.35·P-strength + 0.25·density (weekly-decayed count / candidate median) + 0.15·source-diversity + 0.10·amount-strength + 0.10·trend-persistence + 0.05·geo-HHI; confidence and accessibility per §9.3/§9.4; final = WPS × confidence × accessibility. Candidate pool P_max ≥ P3.
+- Results persist to the `clusters` table (idempotent per `run_date`) and a Markdown report is exported to `reports/top10_YYYYMMDD.md` with verbatim evidence quotes, plus a pure-WPS board (§9.5).
+
+```bash
+python run_rank.py                    # Top 10, 4-week window
+python run_rank.py --top 20 --dry-run # no writes, no LLM
+```
+
 ---
 
 # NeedRadar — 采集层 MVP（中文）
@@ -101,6 +114,19 @@ python run_extract.py --force                # 重抽已有结果
 
 LLM 配置（OpenAI 兼容接口）：`OPENAI_API_KEY`（必需）、`OPENAI_BASE_URL`（可选，可指向任何兼容端点）、`OPENAI_MODEL`（默认 `gpt-4o-mini`）。不硬编码任何 key。
 
+## 聚合与 WPS 排序
+
+`run_rank.py` 把信号聚类为需求主题并按 PRD §7–§9 打分排序：
+
+- **聚类**（`aggregator/clustering.py`）：规则优先——结构化分桶（CFPB issue、NAICS、App/subreddit）+ 领域关键词主题，桶内按 token Jaccard（≥0.3）并查集合并。LLM 只对少量跨桶合并候选对（上限约 30 对、约 3 次调用）做归并裁决，不逐条处理信号。无 pain_point 的文本源信号（好评/未抽取）作为噪音排除。
+- **打分**（`aggregator/scoring.py`）：WPS = 0.35·等级强度 + 0.25·密度（周衰减加权/候选池中位数）+ 0.15·来源多样性 + 0.10·金额线索 + 0.10·趋势持续性 + 0.05·地域集中度；置信度与可进入性按 §9.3/§9.4；最终分 = WPS × 置信度 × 可进入性；候选池 P_max ≥ P3。
+- 结果落 `clusters` 表（按 `run_date` 幂等重跑），并导出 `reports/top10_YYYYMMDD.md`（含原文引用与纯 WPS 榜，§9.5）。
+
+```bash
+python run_rank.py                     # Top 10，4 周窗口
+python run_rank.py --top 20 --dry-run  # 不写库不调 LLM
+```
+
 ## 手动录入
 
 无合法 API 的高价值源（如 Kickstarter most-funded 榜单）人工浏览后手动录入，入 `raw_signals` 表（source='manual'），与自动采集走同一去重和后续流程。
@@ -141,6 +167,10 @@ source_id 为 `manual_` + title/platform/url 的哈希，同一信号重复录�
 - `extractor/llm.py` — LLM 语义抽取（OpenAI 兼容，evidence quote 契约，token 计量）
 - `extractor/pipeline.py` — 抽取流水线（规则全量 + 按源策略调 LLM + 写 extractions 表）
 - `run_extract.py` — 抽取入口（--source/--limit/--force/--dry-run/--no-llm）
+- `aggregator/clustering.py` — 聚类（关键词/结构化预分组 + Jaccard 并查集 + LLM 合并裁决）
+- `aggregator/scoring.py` — WPS / 置信度 / 可进入性打分（PRD §9.2–9.5 原公式）
+- `aggregator/pipeline.py` — 聚合流水线（窗口加载 → 聚类 → 打分 → 落 clusters 表）
+- `run_rank.py` — 排序入口（--top/--weeks/--dry-run/--no-llm，导出 reports/top10_*.md）
 - `manual_entry.py` — 手动信号录入 CLI（交互式 + `--import` JSON 批量导入，source='manual'，哈希去重）
 - `signals.example.json` — 批量导入格式示例
 - `run_daily.py` — 每日入口；各采集器的 `collect(date_from, date_to, session)` 是纯函数，之后可直接包装为 Prefect task。
