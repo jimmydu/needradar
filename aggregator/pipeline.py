@@ -371,7 +371,7 @@ def run(session, weeks=4, use_llm=True, dry_run=False, run_date=None):
         results.sort(key=lambda r: -(r["wps"] * r["confidence"] * r["accessibility"]))
         ambiguous = [r for r in results[:120] if 0.3 < r["software_fit"] < 0.65]
         _fit_arbitrate(ambiguous, usage)
-        ambiguous_b = [r for r in results[:120] if 0.45 < r["barrier"] < 0.95]
+        ambiguous_b = [r for r in results[:120] if r["barrier"] >= 0.45]
         _barrier_arbitrate(ambiguous_b, usage)
         for r in results:
             r["final_score"] = round(r["wps"] * r["confidence"] * r["accessibility"]

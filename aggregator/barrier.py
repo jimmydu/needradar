@@ -68,6 +68,14 @@ TRAVEL_OTA = {
     "flight deal", "flight deals", "hotel booking", "hotel prices",
     "theme park", "disney", "迪士尼", "门票", "机票", "酒店预订", "酒店比价",
 }
+
+# cold-start / two-sided network effects: survival depends on having both
+# sides of a market, BD relationships, or paid traffic at scale. Deliberately
+# narrow vocabulary — ordinary tools must not hit this.
+COLD_START = {
+    "marketplace", "platform for", "investors", "crowdfunding platform",
+    "two-sided", "双边", "平台撮合", "投资人对接", "撮合",
+}
 INFO_AGG = {"聚合", "比价", "提醒", "monitor", "tracking", "alert", "aggregator",
             "comparison", "比价", "信息聚合"}
 
@@ -151,6 +159,10 @@ def rule_barrier(members, stats):
     if _hits(text, TRAVEL_OTA):
         score = min(score, 0.3)
         notes.append("旅行/门票预订：OTA 巨头与官方分销覆盖，库存协议壁垒")
+    # cold-start / two-sided network effects: needs both sides or paid scale
+    if _hits(text, COLD_START):
+        score = min(score, 0.4)
+        notes.append("冷启动：双边网络效应/BD 关系/流量采买，无分发优势难存活")
     return score, "rule", "；".join(notes) if notes else "低门槛"
 
 
@@ -158,17 +170,24 @@ BARRIER_ARBITRATION_SYSTEM = """你是独立开发者进入门槛评估员。给
 从四个维度评估综合门槛：技术（底层/引擎/驱动/实时集成=高门槛）、合规（医疗/金融/法律/政府资质）、
 资源（重资本/供应链/线下履约/数据规模）、渠道（巨头核心功能/平台政策限制）。
 
-**特别判据（命中任一即高门槛，barrier 判 0.1-0.3）**：
+**特别判据（命中任一即高门槛，barrier 判 0.1-0.3；第 4 条为 0.2-0.4）**：
 1. 通用 AI agent 替代：核心价值可被通用 AI 个人 agent（Meta Muse、Claude/ChatGPT 类助手）
    在不依赖专用硬件/本地常驻进程/专有数据时直接代办——打电话客服、在线维权、退订、
-   删账户、追扣费、填表等"线上代办"任务。豁免：依赖本地常驻系统干预、专用数据积累或硬件交付。
+   删账户、追扣费、填表等"线上代办"任务。**澄清**：一次性查价/比价建议属于 agent 可代办；
+   但"持续监控厂商定价页 + 积累历史价格数据 + 涨价预警"属于专有数据积累，可豁免。
+   其他豁免：依赖本地常驻系统干预、专用数据积累或硬件交付。
 2. 法律服务依赖：可行商业模式需法律服务关系或执业资质——集体诉讼（class action）、
    和解金申领（settlement claim）、法律 lead gen、案件管理等。claim filing 侧被通用 agent
    和 DoNotPay 覆盖，案件管理/lead gen 侧必须有律师关系，对无美国实体者是死门槛。
 3. OTA 覆盖：核心价值是旅行/门票/酒店/机票的预订、比价、折扣聚合——已被 Trip.com、Klook、
    Expedia、GetYourGuide 等 OTA 巨头和官方分销体系覆盖，且依赖库存/分销协议。
    豁免：OTA 覆盖不到的垂直工具（小众玩法、本地体验、内容社区）。
+4. 冷启动/获客门槛：产品存活依赖双边网络效应（先有一边用户才能吸引另一边，如平台/市场）、
+   地推/BD 关系、或大规模流量采买，而开发者无分发优势——barrier 判 0.2-0.4。
+   豁免：有明确低成本触达通道的小众工具（ASO/SEO 可命中的具体痛点搜索词、
+   垂类社区/Reddit 板块可直接触达目标用户）；纯靠"做出来自然有人来"的消费级产品不豁免。
 
 输出 JSON：{"barriers": [{"id": 序号, "barrier": 0.0到1.0（越高=门槛越低/越容易进入）, "note": "一句话主要门槛（中文）"}, ...]}。
 参考刻度：纯信息聚合/内容工具=0.85-1.0；普通 SaaS=0.7-0.85；巨头核心功能正面竞争=0.4-0.6；
-平台政策灰色地带=0.4-0.6；底层技术、强监管、通用 agent 可代办、法律服务依赖、OTA 覆盖=0.1-0.3。"""
+平台政策灰色地带=0.4-0.6；底层技术、强监管、通用 agent 可代办、法律服务依赖、OTA 覆盖=0.1-0.3；
+冷启动/双边网络=0.2-0.4。"""
