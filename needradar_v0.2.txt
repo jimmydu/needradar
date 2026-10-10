@@ -130,6 +130,7 @@
 | Indiegogo | 官方公共 API（Gamefound 平台），免认证 | P5 | 2025-10 迁移后有官方 API；无分类字段，软硬件靠文本规则；已实现（2026-10-10） |
 | Kickstarter | 无官方 API；Webrobots 免费月度全站 CSV 数据集（已实现）；直连爬虫已被 Cloudflare 拦死弃用 | P5 | 月度快照天然产生 pledged 增速信号（raw_json.pledged_delta）；2026-10-10 实测首月入库软件类 1091 条 |
 | YouTube | 官方 Data API v3，免费 10,000 单位/天 | P1–P2 | 痛点关键词短视频 + 热门评论；需 Google Cloud Console 申请 key；已实现（2026-10-10，待配 key） |
+| Google News | RSS 关键词搜索，免认证 | P1–P2 | 触发事件类题材雷达（新政策/涨价/短缺/集体诉讼/关停）；已实现（2026-10-10）；GDELT 爆发检测因 IP 限速暂缓（TODO） |
 
 **Tier B — 官方付费 API（预算允许时启用）**
 

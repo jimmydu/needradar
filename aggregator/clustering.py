@@ -68,8 +68,10 @@ _CJK_KW = {t: [k for k in kws if re.search(r"[一-鿿]", k)] for t, kws in CANON
 def canonical_topic(signal, extraction, raw):
     """First matching canonical topic, or None. Gov procurement sources are
     excluded: their titles are procurement jargon, not user-pain language,
-    and they already have structured NAICS buckets."""
-    if signal.source in ("sam_gov", "usaspending"):
+    and they already have structured NAICS buckets. News is a topic radar
+    (trigger events), not user-pain evidence — excluded from pain topics so
+    headlines don't hijack topic summaries or inflate evidence counts."""
+    if signal.source in ("sam_gov", "usaspending", "news"):
         return None
     text = " ".join(filter(None, [
         extraction.pain_point, signal.title,
@@ -111,6 +113,10 @@ def residual_bucket_key(signal, extraction, raw):
         return f"cfpb:{(raw.get('issue') or 'misc')[:60]}"
     if src in ("sam_gov", "usaspending"):
         return f"gov:{signal.naics or 'misc'}"
+    if src == "news":
+        # trigger-event label from the extraction layer groups news into
+        # opportunity-type buckets (e.g. 短缺/积压→调度)
+        return f"news:{extraction.trigger_type or 'misc'}"
     app = raw.get("app_name") or raw.get("app_id")
     if src == "appstore" and app:
         return f"app:{app}"

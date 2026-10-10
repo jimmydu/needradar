@@ -21,6 +21,33 @@ _BUDGET_RE = re.compile(
 )
 
 
+# Trigger-event patterns for news signals (题材雷达): a policy/market event
+# that creates demand for a class of tools. Rule-first, text match only.
+TRIGGER_PATTERNS = [
+    ("新政策生效→合规工具", re.compile(
+        r"\b(new (rule|regulation|law|requirement)s? (takes? effect|coming)|"
+        r"compliance deadline|effective date|mandate[ds]?)\b|新规|合规截止", re.I)),
+    ("价格差/涨价→比价撮合", re.compile(
+        r"\b(price (hike|increase|surge)|prices (rise|soar|jump)|fees? (increase|hike)|"
+        r"rate hike|tariff)\b|涨价|加价", re.I)),
+    ("短缺/积压→调度", re.compile(
+        r"\b(shortage|backlog|waitlist|out of stock|supply crunch|delays? of)\b|短缺|积压|断货", re.I)),
+    ("集体诉讼和解→理赔自动化", re.compile(
+        r"\b(class action( settlement)?|settlement fund|claim form|payout)\b|集体诉讼|和解", re.I)),
+    ("服务关停→迁移替代", re.compile(
+        r"\b(shuts? down|shutting down|discontinued|sunsetting|end of life|"
+        r"no longer available|winding down)\b|关停|下线|停止服务", re.I)),
+]
+
+
+def detect_trigger(text):
+    """Return the first matching trigger-event label, or None."""
+    for label, rx in TRIGGER_PATTERNS:
+        if rx.search(text or ""):
+            return label
+    return None
+
+
 def extract_cost_hint(text):
     """Return a short cost hint string if the text mentions concrete money."""
     if not text:

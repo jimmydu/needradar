@@ -54,10 +54,12 @@ def extract_batch(session, source=None, limit=None, force=False, dry_run=False, 
     stats["total"] = len(signals)
 
     for sig in signals:
+        text = " ".join(filter(None, [sig.title, sig.description]))
         rec = {
             "signal_id": sig.id,
             "p_level": rules.rule_p_level(sig),
             "p_method": "rule" if rules.rule_p_level(sig) else "none",
+            "trigger_type": rules.detect_trigger(text) if sig.source == "news" else None,
             "cost_hint": rules.rule_cost_hint(sig),
             "audience": None, "scenario": None, "pain_point": None,
             "urgency": None, "current_solution": None, "alternatives": None,

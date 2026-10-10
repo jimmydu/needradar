@@ -1,0 +1,13 @@
+# Google News RSS 查询词表（每行一个 query，# 开头注释）
+# Google News RSS query 语法支持引号、OR、AND
+# --- 通用痛点词（触发事件类） ---
+"can't afford"
+"price hike" OR "prices increase" OR "fees increase"
+"shortage" OR "backlog"
+"class action settlement"
+"shuts down" OR "discontinued" OR "shutting down"
+"new rule takes effect" OR "new regulation takes effect"
+# --- 软件机会词 ---
+"no app for"
+"looking for an app" OR "looking for an alternative"
+"alternative to" AND (app OR software)

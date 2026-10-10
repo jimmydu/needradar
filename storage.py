@@ -38,6 +38,7 @@ class Extraction(Base):
     signal_id = Column(Integer, ForeignKey("raw_signals.id"), primary_key=True)
     p_level = Column(Integer)          # 1-5, None = 规则与 LLM 均未判定
     p_method = Column(String(8))       # rule / llm / none
+    trigger_type = Column(String(32))  # 触发事件类型（新闻信号），见 rules.TRIGGER_PATTERNS
     cost_hint = Column(Text)
     audience = Column(Text)
     scenario = Column(Text)
@@ -106,6 +107,10 @@ def _migrate(engine):
     if "rating" not in cols:
         with engine.begin() as conn:
             conn.execute(text("ALTER TABLE raw_signals ADD COLUMN rating INTEGER"))
+    ecols = {c["name"] for c in inspect(engine).get_columns("extractions")}
+    if "trigger_type" not in ecols:
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE extractions ADD COLUMN trigger_type VARCHAR(32)"))
     ccols = {c["name"] for c in inspect(engine).get_columns("clusters")}
     for col, ddl in (("software_fit", "ALTER TABLE clusters ADD COLUMN software_fit FLOAT"),
                      ("fit_method", "ALTER TABLE clusters ADD COLUMN fit_method VARCHAR(16)"),

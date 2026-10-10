@@ -9,7 +9,7 @@ import logging
 from datetime import date, datetime, timedelta
 
 from collectors import (appstore, cfpb, freelancer, indiegogo, kickstarter,
-                        reddit, reddit_rss, sam_gov, usaspending, youtube)
+                        news_rss, reddit, reddit_rss, sam_gov, usaspending, youtube)
 from storage import get_session
 
 log = logging.getLogger(__name__)
@@ -25,6 +25,7 @@ COLLECTORS = [
     ("indiegogo", indiegogo),
     ("kickstarter", kickstarter),
     ("youtube", youtube),
+    ("news", news_rss),
 ]
 
 
