@@ -9,3 +9,11 @@ HVAC
 weddingplanning
 ems
 legaladvice
+SideProject
+AppIdeas
+lightbulb
+EntrepreneurRideAlong
+nocode
+selfhosted
+productivity
+microsaas
