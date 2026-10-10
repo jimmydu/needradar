@@ -18,7 +18,7 @@ def fmt_amount(a):
     return f"${a:,.0f}" if a else "无金额线索"
 
 
-def render_report(survivors, filtered, usage, weeks, run_date):
+def render_report(survivors, filtered, excluded_big, usage, weeks, run_date):
     from collections import Counter
     reason_stats = Counter()
     for r in filtered:
@@ -73,6 +73,18 @@ def render_report(survivors, filtered, usage, weeks, run_date):
         lines.append(f"- {r['summary'][:80]}｜{r['filtered_reason']}")
     lines += [
         "",
+        "## 大证据量但未进榜的主题（候选池规则说明）",
+        "",
+        "以下主题证据充足（≥20 条）但 P_max<P3——没有金额、预算、招标等付费意愿证据，"
+        "按 §9.1 候选池规则（P_max ≥ P3）不进榜。这是规则预期行为：它们代表真实的广泛抱怨，"
+        "但当前数据无法证明有人愿意为此付费。后续可在抽取层对这类主题补充付费意愿探针。",
+        "",
+    ]
+    for t in sorted(excluded_big, key=lambda x: -x["n"]):
+        lines.append(f"- {t['name']}：{t['n']} 条证据，来源 "
+                     f"{json.dumps(t['sources'], ensure_ascii=False)}")
+    lines += [
+        "",
         "---",
         f"LLM 调用 {usage['calls']} 次（合并/可行性/门槛/垄断裁决 + 切入点润色），"
         f"prompt {usage['prompt_tokens']} tokens，completion {usage['completion_tokens']} tokens。",
@@ -91,9 +103,10 @@ def main():
     args = p.parse_args()
 
     session = get_session()
-    survivors, filtered, usage = run(session, weeks=args.weeks,
-                                     use_llm=not (args.no_llm or args.dry_run),
-                                     dry_run=args.dry_run)
+    survivors, filtered, excluded_big, usage = run(
+        session, weeks=args.weeks,
+        use_llm=not (args.no_llm or args.dry_run),
+        dry_run=args.dry_run)
 
     print(f"\n===== NeedRadar 存活主题 {len(survivors)} 个（最终分排序） =====")
     for rank, r in enumerate(survivors[:args.top], 1):
@@ -106,7 +119,7 @@ def main():
     print(f"（过滤：候选 {len(survivors) + len(filtered)} → 存活 {len(survivors)}）")
 
     run_date = date.today().isoformat()
-    report = render_report(survivors, filtered, usage, args.weeks, run_date)
+    report = render_report(survivors, filtered, excluded_big, usage, args.weeks, run_date)
     if not args.dry_run:
         os.makedirs("reports", exist_ok=True)
         path = f"reports/top{args.top}_{run_date.replace('-', '')}.md"

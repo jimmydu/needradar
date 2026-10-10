@@ -287,8 +287,13 @@ def run(session, weeks=4, use_llm=True, dry_run=False, run_date=None):
     stats_all = [scoring.cluster_stats(m, None, window_end) for _, m in clusters]
     all_decayed = [st["decayed"] for st in stats_all if st["p_max"] and st["p_max"] >= 3]
     results = []
+    excluded_big = []  # evidence-rich themes below the P3 payment-intent bar
     for (key, members), st in zip(clusters, stats_all):
         if not st["p_max"] or st["p_max"] < 3:
+            if st["n"] >= 20:
+                kws, _, topic = _cluster_brief((key, members))
+                excluded_big.append({"name": topic or "、".join(kws[:3]),
+                                     "n": st["n"], "sources": dict(st["sources"])})
             continue
         wps = scoring.wps_score(st, all_decayed)
         conf = scoring.confidence_score(st)
@@ -362,4 +367,4 @@ def run(session, weeks=4, use_llm=True, dry_run=False, run_date=None):
         session.commit()
         log.info("persisted %d candidate clusters (run_date=%s)", len(results), run_date)
 
-    return survivors, filtered, usage
+    return survivors, filtered, excluded_big, usage

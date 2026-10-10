@@ -91,8 +91,8 @@ def apply_filters(results, usage, use_llm, chat_json):
                 reason = f"门槛过高（{r['barrier_note']}）"
             elif r.get("topic") in REGULATED_TOPICS:
                 reason = f"合规：{REGULATED_TOPICS[r['topic']]}"
-            elif r["stats"]["n"] < 2:
-                reason = "孤信号（证据不足 2 条）"
+            elif r["stats"]["n"] < 2 and (r["stats"]["p_max"] or 0) < 4:
+                reason = "孤信号（证据不足 2 条且 P_max<P4）"
         r["filtered_reason"] = reason
         (filtered if reason else survivors).append(r)
     return survivors, filtered
