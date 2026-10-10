@@ -76,6 +76,12 @@ def render_report(survivors, filtered, excluded_big, usage, weeks, run_date):
     lines += ["## 已过滤清单（可人工复核复活）", ""]
     for r in filtered:
         lines.append(f"- {r['summary'][:80]}｜{r['filtered_reason']}")
+        links = (r.get("links") or [])[:2]
+        if links:
+            for l in links:
+                lines.append(f"  - [{l['source']}] {l['title']} — {l['url']}")
+        else:
+            lines.append("  - 无链接（该簇信号无原始 URL）")
     lines += [
         "",
         "## 大证据量但未进榜的主题（候选池规则说明）",
