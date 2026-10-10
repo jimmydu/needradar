@@ -70,8 +70,9 @@ def canonical_topic(signal, extraction, raw):
     excluded: their titles are procurement jargon, not user-pain language,
     and they already have structured NAICS buckets. News is a topic radar
     (trigger events), not user-pain evidence — excluded from pain topics so
-    headlines don't hijack topic summaries or inflate evidence counts."""
-    if signal.source in ("sam_gov", "usaspending", "news"):
+    headlines don't hijack topic summaries or inflate evidence counts.
+    Crowdfunding sources are products, not pain posts — excluded likewise."""
+    if signal.source in ("sam_gov", "usaspending", "news", "kickstarter", "indiegogo"):
         return None
     text = " ".join(filter(None, [
         extraction.pain_point, signal.title,
@@ -117,6 +118,9 @@ def residual_bucket_key(signal, extraction, raw):
         # trigger-event label from the extraction layer groups news into
         # opportunity-type buckets (e.g. 短缺/积压→调度)
         return f"news:{extraction.trigger_type or 'misc'}"
+    if src in ("kickstarter", "indiegogo"):
+        # crowdfunding products cluster by KS/IGG category
+        return f"crowd:{str(raw.get('category') or raw.get('projectType') or 'misc')[:40]}"
     app = raw.get("app_name") or raw.get("app_id")
     if src == "appstore" and app:
         return f"app:{app}"
@@ -168,6 +172,11 @@ def cluster_signals(members, jaccard_threshold=0.3):
     for m in residuals:
         buckets[residual_bucket_key(*m)].append(m)
     for key, group in buckets.items():
+        if key.startswith("crowd:"):
+            # crowdfunding: the category itself is the theme (one project is
+            # not a demand theme); skip token-level splitting entirely
+            clusters.append((f"res:{key}", group))
+            continue
         token_sets = [tokenize(doc_text(s, e) + " " + (s.title or "")) for s, e, _ in group]
         uf = UnionFind(range(len(group)))
         for i in range(len(group)):

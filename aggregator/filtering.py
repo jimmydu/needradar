@@ -4,11 +4,14 @@ Filtered clusters stay in the DB with `filtered_reason` for audit and manual
 revival; the report lists them separately.
 """
 import logging
+import json
 import re
 
 log = logging.getLogger(__name__)
 
 GOV_SOURCES = {"sam_gov", "usaspending"}
+CROWD_SOURCES = {"kickstarter", "indiegogo"}
+CROWD_SOFTWARE_CATS = {"Apps", "Software", "Web", "Video Games"}
 
 # canonical topics whose underlying demand IS a licensed activity
 REGULATED_TOPICS = {
@@ -82,7 +85,16 @@ def apply_filters(results, usage, use_llm, chat_json):
     for r in results:
         reason = r.get("filtered_reason")
         if not reason:
-            if r["software_fit"] < 0.3:
+            srcs = set(r["stats"]["sources"])
+            if srcs and srcs <= CROWD_SOURCES:
+                cats = {json.loads(s.raw_json or "{}").get("category")
+                        for s, _, _ in r["cluster"]}
+                sw = bool(cats & CROWD_SOFTWARE_CATS)
+                if r["stats"]["n"] < 5:
+                    reason = "众筹孤项目（单品不成主题）"
+                elif not sw and (r["stats"]["median_amount"] or 0) < 10_000:
+                    reason = "众筹非软件小额主题（电影/公益等）"
+            if not reason and r["software_fit"] < 0.3:
                 reason = "代码可行性过低（硬件/实物/线下服务）"
             elif set(r["stats"]["sources"]) <= GOV_SOURCES \
                     and r["software_fit"] <= 0.35 and r["fit_method"] != "rule_gov_it":

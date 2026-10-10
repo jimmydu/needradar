@@ -85,6 +85,9 @@ def rule_p_level(signal):
         if stype == "已完成外包":
             return 5
         return 4 if signal.amount else 3
+    if source in ("kickstarter", "indiegogo"):
+        # crowdfunding with pledged amount = money already paid
+        return 5 if signal.amount else 3
     if source == "manual":
         if stype == "众筹预售":
             return 5 if signal.amount else 4

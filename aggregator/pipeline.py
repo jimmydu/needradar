@@ -82,6 +82,8 @@ def _cluster_brief(cluster, max_items=3):
         if len(reps) >= max_items:
             break
     topic = key[6:] if key.startswith("topic:") else None
+    if key.startswith("res:crowd:"):
+        topic = f"众筹·{key[10:]}"
     return kws, reps, topic
 
 

@@ -179,6 +179,18 @@ def collect(date_from, date_to, session):
                 backers = int(float(row.get("backers_count") or 0))
                 proj_url = _parse_urls(row.get("urls"))
                 state_code = _parse_location_state(row.get("location"))
+                ks_state = row.get("state") or ""
+                # signal time: live projects are still raising until their
+                # deadline — use min(deadline, now); finished ones keep launch
+                if ks_state == "live":
+                    try:
+                        deadline = float(row.get("deadline") or 0)
+                    except ValueError:
+                        deadline = 0
+                    posted_at = datetime.utcfromtimestamp(min(deadline, now.timestamp())) \
+                        if deadline else datetime.strptime(ds_date, "%Y-%m-%d")
+                else:
+                    posted_at = datetime.utcfromtimestamp(launched) if launched else None
 
                 prev = existing.get(pid)
                 if prev:
@@ -209,7 +221,7 @@ def collect(date_from, date_to, session):
                     "amount": pledged,
                     "naics": None,
                     "state": state_code,
-                    "posted_at": datetime.utcfromtimestamp(launched) if launched else None,
+                    "posted_at": posted_at,
                     "fetched_at": now,
                     "url": proj_url,
                     "rating": None,
