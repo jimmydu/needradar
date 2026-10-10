@@ -10,6 +10,8 @@ barrier = weighted sum; final score multiplies it in.
 """
 import re
 
+GOV_SOURCES = {"sam_gov", "usaspending"}
+
 TECH_DEEP = {
     "engine", "hook", "hooks", "driver", "kernel", "firmware", "embedded",
     "realtime", "real-time", "protocol", "低代码", "引擎", "驱动", "内核",
@@ -61,6 +63,14 @@ def rule_barrier(members, stats):
     if comp_hits:
         compliance = 0.2
 
+    gov_only = set(stats["sources"]) <= GOV_SOURCES
+    if gov_only:
+        # government contracting requires a US entity / contractor registration
+        # (SAM.gov) and often clearances — the compliance dim must reflect that
+        # even when no regulated-industry keyword appears in the title
+        compliance = min(compliance, 0.2)
+        comp_hits = comp_hits or ["government contract"]
+
     resource = 1.0
     res_hits = _hits(text, RESOURCE_HEAVY)
     if res_hits:
@@ -71,20 +81,28 @@ def rule_barrier(members, stats):
         channel = 0.5
     elif _hits(text, CHANNEL_INCUMBENT):
         channel = 0.5
+    if gov_only:
+        channel = min(channel, 0.3)  # no access to the gov sales channel as an indie
 
     notes = []
     if tech < 1:
         notes.append("技术：需游戏引擎级/底层系统集成" if game_perf and not tech_hits
                      else f"技术：深度底层集成（{tech_hits[0]}）")
     if compliance < 1:
-        notes.append(f"合规：{comp_hits[0]} 受监管/需资质")
+        notes.append("合规：政府合同需美国实体/承包商资质/安全许可" if gov_only
+                     else f"合规：{comp_hits[0]} 受监管/需资质")
     if resource < 1:
         notes.append(f"资源：{res_hits[0]} 需重资本/线下履约/数据规模")
-    if channel < 1:
+    if channel < 1 and not gov_only:
         notes.append("渠道：平台政策限制（自动取消/退款灰色地带）"
                      if _hits(text, CHANNEL_PLATFORM) else "竞争：直面巨头核心功能")
+    elif gov_only:
+        notes.append("渠道：无政府销售渠道")
 
     score = round(0.35 * tech + 0.30 * compliance + 0.20 * resource + 0.15 * channel, 3)
+    if gov_only:
+        # cap: pure government demand can never be an easy indie entry
+        score = min(score, 0.35)
     return score, "rule", "；".join(notes) if notes else "低门槛"
 
 

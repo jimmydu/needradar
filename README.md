@@ -40,7 +40,8 @@ LLM config (OpenAI-compatible): `OPENAI_API_KEY` (required), `OPENAI_BASE_URL` (
 - **Clustering** (`aggregator/clustering.py`): rules first — each signal is assigned to exactly one **canonical topic** (priority-ordered keyword system, ~20 topics: 订阅与扣费 / 定价与涨价 / 崩溃与稳定性 / 性能与速度 / 数据丢失与同步 / 广告过多 / AI 功能反感 / 客服与支持 / 发票与记账 / 预约与排程 / 登录与账户 / 通知与提醒 / 界面与易用性 / 离线与网络依赖 / 欺诈与盗刷 / 催收与债务 / 信用报告 / 贷款与房贷 / 政府合同与采购 / 招聘与外包 / 功能缺失与请求; Latin keywords match on word boundaries, CJK as substrings; gov procurement sources excluded). The topic itself is the cluster. Signals outside any topic fall back to structured buckets (CFPB issue, NAICS, app/subreddit) + token-Jaccard union-find; only these residual clusters go through LLM merge arbitration (a few batched calls). Text sources without an extracted pain point and chart snapshots are excluded as noise.
 - **Scoring** (`aggregator/scoring.py`): WPS = 0.35·P-strength + 0.25·density (weekly-decayed count / candidate median) + 0.15·source-diversity + 0.10·amount-strength + 0.10·trend-persistence + 0.05·geo-HHI; confidence and accessibility per §9.3/§9.4.
 - **Software fit** (`aggregator/fit.py`): 0–1 rule score for indie-developer deliverability — physical-goods keywords and numeric PSC codes score ~0.1, SAM.gov PSC 'D' (IT services) 0.65, software keywords + consumer/SMB sources push up, licensed industries push down; ambiguous near-top clusters go to LLM arbitration (a few batched calls).
-- **Barrier** (`aggregator/barrier.py`): 0–1 score for post-entry difficulty (higher = easier) — 0.35·technical (engine/driver/realtime integration) + 0.30·compliance (HIPAA/finance licenses/legal/gov clearance) + 0.20·resource (capital/supply chain/data scale) + 0.15·channel (incumbent core features / platform policy gray zones, e.g. auto-cancel subscriptions); each hit carries a one-line Chinese note; ambiguous cases go to batched LLM arbitration.
+- **Barrier** (`aggregator/barrier.py`): 0–1 score for post-entry difficulty (higher = easier) — 0.35·technical (engine/driver/realtime integration) + 0.30·compliance (HIPAA/finance licenses/legal/gov clearance; **pure gov-source themes always get compliance 0.2, channel ≤0.3 and a 0.35 total cap** — government contracting needs a US entity / contractor registration) + 0.20·resource (capital/supply chain/data scale) + 0.15·channel (incumbent core features / platform policy gray zones, e.g. auto-cancel subscriptions); each hit carries a one-line Chinese note; ambiguous cases go to batched LLM arbitration.
+- **LLM tiers**: arbitration calls (merge/fit/barrier/monopoly) use a cheap/local tier when `NEEDRADAR_LLM_LIGHT` + `NEEDRADAR_LLM_LIGHT_MODEL` are set (e.g. Ollama at `http://localhost:11434/v1` with `gemma4:12b`, free); extraction and entry-point writing stay on the heavy tier (`OPENAI_*`). Tested parity: gemma4:12b arbitration quality matched kimi; extraction JSON compliance 6/6.
 - **Hard filters** (`aggregator/filtering.py`): after scoring, clusters are removed (not just down-scored) when software_fit < 0.3 (hardware/offline), gov-only with fit ≤ 0.35 (US entity / contractor eligibility required), barrier < 0.4, the topic itself is a licensed activity (debt collection / lending / credit reporting), the demand is fully covered by an incumbent with no differentiation room (rule preselection + LLM verdict; complaints about incumbents are kept as opportunities), or fewer than 2 evidence signals. Filtered rows keep a `filtered_reason` in the `clusters` table and are listed in the report's audit appendix for manual revival.
 - Final = WPS × confidence × accessibility × software_fit × barrier.
 - Results persist to the `clusters` table (idempotent per `run_date`) and a Markdown report is exported to `reports/topN_YYYYMMDD.md` (main board + pure-WPS Top 20, per-item entry-point suggestions, verbatim evidence quotes).
@@ -118,6 +119,12 @@ python run_extract.py --force                # 重抽已有结果
 
 LLM 配置（OpenAI 兼容接口）：`OPENAI_API_KEY`（必需）、`OPENAI_BASE_URL`（可选，可指向任何兼容端点）、`OPENAI_MODEL`（默认 `gpt-4o-mini`）。不硬编码任何 key。
 
+### LLM 双档（轻量本地 + 重量云端）
+
+- **重量档**（`OPENAI_*`，如 kimi-k2.7-code-highspeed）：抽取层语义字段（evidence 逐字引用契约要求高）、切入点文案润色。
+- **轻量档**（`NEEDRADAR_LLM_LIGHT` + `NEEDRADAR_LLM_LIGHT_MODEL`）：聚合层裁决类调用（合并/可行性/门槛/垄断，短文本判断）。例：`NEEDRADAR_LLM_LIGHT=http://localhost:11434/v1 NEEDRADAR_LLM_LIGHT_MODEL=gemma4:12b`（本机 Ollama，免费）。未配置时裁决类回落重量档；两档都未配置则跳过裁决、纯规则跑通。
+- 实测（2026-10，gemma4:12b vs kimi）：裁决类质量相当（合并裁决 29/30 与 kimi 一致，门槛/可行性判断合理）；抽取层 6 条样本 JSON 合规 6/6、字段填充 15/24（kimi 16/24）、evidence 经代码强制校验 100% 逐字——抽取也可用轻量档跑批量，但默认仍走重量档。
+
 ## 聚合与 WPS 排序
 
 `run_rank.py` 把信号聚类为需求主题并按 PRD §7–§9 打分排序：
@@ -125,7 +132,7 @@ LLM 配置（OpenAI 兼容接口）：`OPENAI_API_KEY`（必需）、`OPENAI_BAS
 - **聚类**（`aggregator/clustering.py`）：规范主题体系——每条信号按优先级关键词命中归入唯一规范主题（订阅与扣费/定价与涨价/崩溃与稳定性/性能与速度/数据丢失与同步/广告过多/AI 功能反感/客服与支持/发票与记账/预约与排程/登录与账户/通知与提醒/界面与易用性/离线与网络依赖/欺诈与盗刷/催收与债务/信用报告/贷款与房贷/政府合同与采购/招聘与外包/功能缺失与请求；英文词边界匹配、中文子串匹配；政府采购源不参与主题匹配），主题本身即簇，杜绝同主题碎裂。主题之外的残余信号走结构化分桶（CFPB issue、NAICS、App/sub）+ token Jaccard 并查集，仅残余簇参与 LLM 合并裁决（几次批量调用）。无 pain_point 的文本源信号与榜单快照不参与聚类。
 - **打分**（`aggregator/scoring.py`）：WPS = 0.35·等级强度 + 0.25·密度（周衰减加权/候选池中位数）+ 0.15·来源多样性 + 0.10·金额线索 + 0.10·趋势持续性 + 0.05·地域集中度；置信度与可进入性按 §9.3/§9.4。
 - **代码可行性**（`aggregator/fit.py`）：0–1 规则分，衡量独立开发者可否纯软件交付——实物/物料关键词与数字 PSC 码约 0.1，SAM.gov PSC 以 D 开头（IT 服务）0.65，软件关键词 + 消费/SMB 来源加分，牌照行业减分；顶部分数模糊（0.3–0.65）的簇交 LLM 批量裁决。
-- **门槛高度**（`aggregator/barrier.py`）：0–1 分（越高=门槛越低），衡量切入后交付难度——0.35·技术（引擎/驱动/实时底层集成）+ 0.30·合规（HIPAA/金融牌照/法律/政府资质）+ 0.20·资源（重资本/供应链/数据规模）+ 0.15·渠道（巨头核心功能/平台政策灰色地带，如自动取消订阅）；每条附一句门槛说明；边界簇 LLM 批量裁决。
+- **门槛高度**（`aggregator/barrier.py`）：0–1 分（越高=门槛越低），衡量切入后交付难度——0.35·技术（引擎/驱动/实时底层集成）+ 0.30·合规（HIPAA/金融牌照/法律/政府资质；**纯政府源主题一律合规 0.2 并封顶总分 0.35**：政府合同需美国实体/承包商资质/安全许可）+ 0.20·资源（重资本/供应链/数据规模）+ 0.15·渠道（巨头核心功能/平台政策灰色地带，如自动取消订阅；纯政府源渠道≤0.3）；每条附一句门槛说明；边界簇 LLM 批量裁决。
 - 最终分 = WPS × 置信度 × 可进入性 × 代码可行性 × 门槛高度。
 - **硬过滤**（`aggregator/filtering.py`）：打分后出榜前剔除——software_fit<0.3（硬件/线下）、纯政府采购且 fit≤0.35（需美国实体/承包商资质）、barrier<0.4（门槛过高）、主题本质为持证经营（催收/放贷/征信）、强竞品垄断无差异化空间（规则预选 + LLM 裁决；抱怨巨头涨价/难用的主题保留为机会）、孤信号（n<2 且 P_max<P4；P4/P5 孤信号保留）。被过滤簇在 `clusters` 表保留 `filtered_reason`，报告附「已过滤清单」供人工复核复活；报告另附「大证据量但未进榜主题」说明（≥20 条证据但无付费意愿信号，按 §9.1 不进榜，不改公式）。
 - 结果落 `clusters` 表（按 `run_date` 幂等重跑），导出 `reports/top50_YYYYMMDD.md`（主榜 Top 50 + 纯 WPS 榜 Top 20，每条含切入点建议与原文引用）。

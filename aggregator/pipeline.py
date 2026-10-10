@@ -23,16 +23,36 @@ MERGE_SYSTEM = """你是需求主题归并裁判。给定若干对候选主题�
 
 
 def _llm_configured():
+    """Heavy tier (kimi/OpenAI) configured."""
     return bool(os.environ.get("OPENAI_API_KEY"))
 
 
-def _chat_json(system, user, timeout=None):
-    """Generic chat->JSON call, same endpoint conventions as extractor.llm."""
-    api_key = os.environ.get("OPENAI_API_KEY")
+def _light_configured():
+    return bool(os.environ.get("NEEDRADAR_LLM_LIGHT"))
+
+
+def _arbitration_ready():
+    return _light_configured() or _llm_configured()
+
+
+def _chat_json(system, user, timeout=None, tier="light"):
+    """Generic chat->JSON call.
+
+    tier="light" (aggregation arbitrations: merge/fit/barrier/monopoly) uses
+    the local model when NEEDRADAR_LLM_LIGHT (base URL) and
+    NEEDRADAR_LLM_LIGHT_MODEL are set — e.g. Ollama's OpenAI-compatible
+    endpoint http://localhost:11434/v1 with gemma4:12b. Otherwise falls back
+    to the heavy tier (OPENAI_* env, kimi), same conventions as extractor.llm.
+    """
     base = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1")
     model = os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
+    api_key = os.environ.get("OPENAI_API_KEY")
+    if tier == "light" and os.environ.get("NEEDRADAR_LLM_LIGHT"):
+        base = os.environ["NEEDRADAR_LLM_LIGHT"].rstrip("/")
+        model = os.environ.get("NEEDRADAR_LLM_LIGHT_MODEL", "gemma4:12b")
+        api_key = os.environ.get("NEEDRADAR_LLM_LIGHT_KEY", "ollama")
     temperature = float(os.environ.get(
-        "OPENAI_TEMPERATURE", "1" if model.startswith("kimi") else "0"))
+        "OPENAI_TEMPERATURE", "1" if model.startswith(("kimi", "gemma")) else "0"))
     timeout = timeout or int(os.environ.get("OPENAI_TIMEOUT", "180"))
     resp = requests.post(
         f"{base}/chat/completions",
@@ -47,7 +67,7 @@ def _chat_json(system, user, timeout=None):
         timeout=timeout,
     )
     if resp.status_code >= 400:
-        log.warning("LLM HTTP %s: %s", resp.status_code, resp.text[:300])
+        log.warning("LLM(%s) HTTP %s: %s", model, resp.status_code, resp.text[:300])
         resp.raise_for_status()
     body = resp.json()
     usage = body.get("usage") or {}
@@ -245,7 +265,8 @@ def _llm_entry_points(results, usage, batch=25):
                          f"来源: {dict(r['stats']['sources'])}｜代码可行性: {r['software_fit']}｜"
                          f"门槛: {r['barrier']}（{r['barrier_note']}）")
         try:
-            parsed, ptok, ctok = _chat_json(fit.ENTRY_POINT_SYSTEM, "\n".join(lines))
+            parsed, ptok, ctok = _chat_json(fit.ENTRY_POINT_SYSTEM, "\n".join(lines),
+                                            tier="heavy")
             usage["calls"] += 1
             usage["prompt_tokens"] += ptok
             usage["completion_tokens"] += ctok
@@ -269,7 +290,7 @@ def run(session, weeks=4, use_llm=True, dry_run=False, run_date=None):
     log.info("pre-grouped into %d clusters (%d canonical topics, %d residual)",
              len(clusters), n_topic, len(clusters) - n_topic)
 
-    if use_llm and _llm_configured():
+    if use_llm and _arbitration_ready():
         # merge arbitration only applies to residual (non-topic) clusters
         topic_clusters = [c for c in clusters if c[0].startswith("topic:")]
         residuals = [c for c in clusters if not c[0].startswith("topic:")]
@@ -281,7 +302,7 @@ def run(session, weeks=4, use_llm=True, dry_run=False, run_date=None):
             residuals = apply_merges(residuals, merges)
         clusters = topic_clusters + residuals
     elif use_llm:
-        log.warning("OPENAI_API_KEY not set; skipping merge arbitration")
+        log.warning("no LLM tier configured; skipping merge arbitration")
 
     # score all clusters; candidate pool = P_max >= P3
     stats_all = [scoring.cluster_stats(m, None, window_end) for _, m in clusters]
@@ -316,7 +337,7 @@ def run(session, weeks=4, use_llm=True, dry_run=False, run_date=None):
         })
 
     # LLM arbitration for ambiguous clusters near the top (cost-capped)
-    if use_llm and _llm_configured():
+    if use_llm and _arbitration_ready():
         results.sort(key=lambda r: -(r["wps"] * r["confidence"] * r["accessibility"]))
         ambiguous = [r for r in results[:120] if 0.3 < r["software_fit"] < 0.65]
         _fit_arbitrate(ambiguous, usage)
@@ -328,7 +349,7 @@ def run(session, weeks=4, use_llm=True, dry_run=False, run_date=None):
 
     # hard filters: after scoring, before ranking
     survivors, filtered = filtering.apply_filters(
-        results, usage, use_llm and _llm_configured(), _chat_json)
+        results, usage, use_llm and _arbitration_ready(), _chat_json)
     log.info("filters: %d candidates -> %d survivors, %d filtered",
              len(results), len(survivors), len(filtered))
 
