@@ -65,7 +65,7 @@ def _cluster_brief(cluster, max_items=3):
             reps.append(text[:150])
         if len(reps) >= max_items:
             break
-    topic = key[3:] if key.startswith("kw:") else None
+    topic = key[6:] if key.startswith("topic:") else None
     return kws, reps, topic
 
 
@@ -106,8 +106,8 @@ def apply_merges(clusters, merges):
         if root not in merged:
             merged[root] = [key, []]
         merged[root][1].extend(members)
-        if not merged[root][0].startswith("kw:") and key.startswith("kw:"):
-            merged[root][0] = key  # prefer the named topic as the cluster key
+        if not merged[root][0].startswith("topic:") and key.startswith("topic:"):
+            merged[root][0] = key  # prefer the canonical topic as the cluster key
     return [(k, m) for k, m in merged.values()]
 
 
@@ -225,15 +225,21 @@ def run(session, weeks=4, use_llm=True, dry_run=False, run_date=None):
     log.info("window %s..%s: %d signals", window_start.date(), window_end.date(), len(members))
 
     clusters = cluster_signals(members)
-    log.info("pre-grouped into %d clusters", len(clusters))
+    n_topic = sum(1 for k, _ in clusters if k.startswith("topic:"))
+    log.info("pre-grouped into %d clusters (%d canonical topics, %d residual)",
+             len(clusters), n_topic, len(clusters) - n_topic)
 
     if use_llm and _llm_configured():
-        pairs = find_merge_candidates(clusters)
-        log.info("%d merge candidate pairs -> LLM arbitration", len(pairs))
+        # merge arbitration only applies to residual (non-topic) clusters
+        topic_clusters = [c for c in clusters if c[0].startswith("topic:")]
+        residuals = [c for c in clusters if not c[0].startswith("topic:")]
+        pairs = find_merge_candidates(residuals)
+        log.info("%d merge candidate pairs (residual only) -> LLM arbitration", len(pairs))
         if pairs:
-            merges = llm_arbitrate(clusters, pairs, usage)
+            merges = llm_arbitrate(residuals, pairs, usage)
             log.info("LLM approved %d merges", len(merges))
-            clusters = apply_merges(clusters, merges)
+            residuals = apply_merges(residuals, merges)
+        clusters = topic_clusters + residuals
     elif use_llm:
         log.warning("OPENAI_API_KEY not set; skipping merge arbitration")
 

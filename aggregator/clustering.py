@@ -17,40 +17,73 @@ im ive dont doesnt didnt cant couldnt wont wouldnt isnt arent wasnt werent
 the a an de la el en 了 的 是 我 你 这 那 有 在 和 就 都 很 不 也 用 无法 没有 一个
 """.split())
 
-# canonical topic -> trigger keywords (lowercase substring match on tokens)
-KEYWORD_BUCKETS = {
-    "价格过高/订阅收费": {"expensive", "overpriced", "price", "pricing", "pricy", "costly",
-                      "subscription", "subscriptions", "paywall", "upgrade"},
-    "退款/计费纠纷": {"refund", "refunds", "charged", "charge", "billing", "billed",
-                   "unauthorized", "auto-renewal", "renewal", "cancellation", "cancel", "cancelled"},
-    "崩溃/闪退/故障": {"crash", "crashes", "crashing", "freeze", "freezes", "freezing",
-                   "bug", "bugs", "buggy", "broken", "glitch", "error", "errors"},
-    "运行缓慢/性能": {"slow", "slowly", "lag", "laggy", "lagging", "loading", "performance",
-                   "unresponsive", "responsive", "sluggish"},
-    "同步/备份问题": {"sync", "syncing", "synchronization", "backup", "backups"},
-    "通知/提醒问题": {"notification", "notifications", "badge", "badges", "alert", "alerts"},
-    "登录/账户问题": {"login", "log", "signin", "password", "verification", "locked", "suspended",
-                   "account"},
-    "客服/支持差": {"support", "customer", "service", "agent", "agents", "response", "help"},
-    "发票/收付款/记账": {"invoice", "invoices", "invoicing", "payment", "payments", "payroll",
-                      "transaction", "transactions", "check", "deposit", "bookkeeping", "accounting",
-                      "quickbooks", "bank", "banking", "checking"},
-    "数据丢失/迁移": {"lost", "lose", "losing", "missing", "deleted", "disappeared", "gone",
-                   "wipe", "wiped", "migration"},
-    "AI 功能问题": {"ai", "bot", "chatbot", "gpt", "agent"},
-    "离线/网络依赖": {"offline", "internet", "connection", "wifi", "online"},
-    "界面/易用性": {"interface", "ui", "ux", "intuitive", "confusing", "clunky", "navigation",
-                 "design", "layout", "unusable"},
-    "功能缺失/请求": {"feature", "features", "wish", "add", "missing", "lack", "lacks", "lacking",
-                   "need", "needs", "option", "parity"},
-    "更新后变差": {"update", "updates", "updated", "version", "since"},
-    "信用报告/征信": {"credit", "report", "reporting", "score", "equifax", "experian", "transunion"},
-    "催收/债务": {"debt", "collection", "collections", "collector", "harassment"},
-    "欺诈/盗刷": {"fraud", "scam", "stolen", "identity", "theft", "dispute"},
-    "抵押贷款/房贷": {"mortgage", "loan", "loans", "lender", "servicing", "escrow"},
-    "政府合同/采购": {"solicitation", "contract", "contracts", "rfp", "bid", "procurement", "award"},
-    "招聘/外包人力": {"hire", "hiring", "freelancer", "contractor", "developer", "designer"},
-}
+# Canonical topics, priority-ordered: first match wins. Latin keywords match
+# on word boundaries, CJK keywords as substrings. A signal lands in exactly
+# one topic and the topic itself is the cluster (per product decision).
+CANONICAL_TOPICS = [
+    ("订阅与扣费", ["subscription", "billing", "billed", "refund", "refunded", "charged",
+                 "chargeback", "cancel", "cancelled", "cancellation", "free trial", "trial",
+                 "auto-renew", "renewal", "unauthorized charge", "renew",
+                 "订阅", "扣费", "扣款", "退款", "取消", "续费", "试用", "付费墙"]),
+    ("定价与涨价", ["expensive", "overpriced", "price", "pricing", "price increase",
+                 "too much", "afford", "涨价", "太贵", "价格", "费用高", "年费"]),
+    ("崩溃与稳定性", ["crash", "crashes", "crashing", "freeze", "freezes", "bug", "bugs",
+                   "buggy", "broken", "glitch", "error", "闪退", "崩溃", "卡死", "故障"]),
+    ("性能与速度", ["slow", "slowly", "lag", "laggy", "lagging", "loading", "performance",
+                 "unresponsive", "sluggish", "卡顿", "缓慢", "太慢", "响应慢"]),
+    ("数据丢失与同步", ["sync", "syncing", "backup", "lost", "lose", "losing", "missing",
+                    "deleted", "disappeared", "gone", "wiped", "migration",
+                    "丢失", "同步", "不见", "消失", "备份"]),
+    ("广告过多", ["ads", "advertisement", "advertising", "ad-filled", "广告"]),
+    ("AI 功能反感", ["ai", "chatbot", "gpt", "llm", "人工智能"]),
+    ("客服与支持", ["support", "customer service", "customer support", "no response",
+                 "help desk", "客服", "售后"]),
+    ("发票与记账", ["invoice", "invoices", "invoicing", "payment", "payments", "payroll",
+                 "bookkeeping", "accounting", "quickbooks", "transaction", "transactions",
+                 "deposit", "checking", "发票", "记账", "收款", "付款", "报销"]),
+    ("预约与排程", ["scheduling", "schedule", "booking", "bookings", "appointment",
+                 "calendar", "预约", "排期", "日程"]),
+    ("登录与账户", ["login", "log in", "sign in", "password", "verification", "locked",
+                 "suspended", "account", "banned", "登录", "账户", "封号", "验证"]),
+    ("通知与提醒", ["notification", "notifications", "badge", "alert", "alerts", "remind",
+                 "通知", "提醒"]),
+    ("界面与易用性", ["interface", "ui", "ux", "intuitive", "confusing", "clunky",
+                   "navigation", "layout", "unusable", "hard to use", "难用", "界面", "易用"]),
+    ("离线与网络依赖", ["offline", "internet connection", "no connection", "wifi", "离线", "网络"]),
+    ("欺诈与盗刷", ["fraud", "scam", "stolen", "identity theft", "phishing", "欺诈", "盗刷", "诈骗"]),
+    ("催收与债务", ["debt", "collection", "collections", "collector", "harassment", "催收", "债务"]),
+    ("信用报告", ["credit report", "credit score", "equifax", "experian", "transunion", "征信"]),
+    ("贷款与房贷", ["mortgage", "loan", "loans", "lender", "escrow", "贷款", "房贷"]),
+    ("政府合同与采购", ["solicitation", "rfp", "rfq", "procurement", "bid", "contract award"]),
+    ("招聘与外包", ["hire", "hiring", "freelancer", "contractor", "outsourc", "外包", "招聘"]),
+    ("功能缺失与请求", ["feature", "features", "wish", "missing feature", "lack", "lacks",
+                    "add an option", "parity", "功能", "希望", "建议增加"]),
+]
+
+_LATIN_KW = {t: re.compile(r"\b(?:" + "|".join(re.escape(k) for k in kws if not re.search(r"[一-鿿]", k)) + r")\b")
+             for t, kws in CANONICAL_TOPICS}
+_CJK_KW = {t: [k for k in kws if re.search(r"[一-鿿]", k)] for t, kws in CANONICAL_TOPICS}
+
+
+def canonical_topic(signal, extraction, raw):
+    """First matching canonical topic, or None. Gov procurement sources are
+    excluded: their titles are procurement jargon, not user-pain language,
+    and they already have structured NAICS buckets."""
+    if signal.source in ("sam_gov", "usaspending"):
+        return None
+    text = " ".join(filter(None, [
+        extraction.pain_point, signal.title,
+        raw.get("issue") or "", raw.get("product") or "",
+    ])).lower()
+    if not text:
+        return None
+    for topic, _ in CANONICAL_TOPICS:
+        rx = _LATIN_KW.get(topic)
+        if rx and rx.search(text):
+            return topic
+        if any(k in text for k in _CJK_KW.get(topic, [])):
+            return topic
+    return None
 
 _CJK_RE = re.compile(r"[一-鿿]+")
 _TOKEN_RE = re.compile(r"[a-z0-9][a-z0-9'\-]{1,}|[一-鿿]+")
@@ -71,23 +104,19 @@ def doc_text(signal, extraction):
     return extraction.pain_point or signal.title or ""
 
 
-def bucket_key(signal, extraction, raw):
-    """Assign a pre-grouping bucket: structured fields first, then keywords."""
+def residual_bucket_key(signal, extraction, raw):
+    """Fallback bucket for signals outside the canonical topics."""
     src = signal.source
     if src == "cfpb":
         return f"cfpb:{(raw.get('issue') or 'misc')[:60]}"
     if src in ("sam_gov", "usaspending"):
         return f"gov:{signal.naics or 'misc'}"
-    tokens = tokenize(doc_text(signal, extraction))
-    for topic, kws in KEYWORD_BUCKETS.items():
-        if tokens & kws:
-            return f"kw:{topic}"
     app = raw.get("app_name") or raw.get("app_id")
     if src == "appstore" and app:
         return f"app:{app}"
     if src in ("reddit_rss", "reddit"):
         return f"sub:{raw.get('subreddit') or 'misc'}"
-    sig_tokens = sorted(tokens)[:3]
+    sig_tokens = sorted(tokenize(doc_text(signal, extraction)))[:3]
     return f"misc:{'_'.join(sig_tokens) or signal.source}"
 
 
@@ -115,18 +144,24 @@ def _jaccard(a, b):
 
 def cluster_signals(members, jaccard_threshold=0.3):
     """members: list of (signal, extraction, raw_dict). Returns list of
-    (bucket_key, cluster_members) tuples."""
-    buckets = defaultdict(list)
+    (cluster_key, members). Canonical-topic members form one cluster per
+    topic ("topic:<name>"); the rest fall back to structured buckets with
+    token-Jaccard merging ("res:<bucket>")."""
+    topics = defaultdict(list)
+    residuals = []
     for m in members:
-        buckets[bucket_key(*m)].append(m)
+        t = canonical_topic(*m)
+        if t:
+            topics[t].append(m)
+        else:
+            residuals.append(m)
 
-    clusters = []
+    clusters = [(f"topic:{t}", g) for t, g in topics.items()]
+
+    buckets = defaultdict(list)
+    for m in residuals:
+        buckets[residual_bucket_key(*m)].append(m)
     for key, group in buckets.items():
-        if key.startswith("kw:"):
-            # the keyword topic itself is the demand theme; app/source-specific
-            # sub-clusters stay available via the members' raw fields
-            clusters.append((key, group))
-            continue
         token_sets = [tokenize(doc_text(s, e) + " " + (s.title or "")) for s, e, _ in group]
         uf = UnionFind(range(len(group)))
         for i in range(len(group)):
@@ -136,7 +171,7 @@ def cluster_signals(members, jaccard_threshold=0.3):
         merged = defaultdict(list)
         for i, m in enumerate(group):
             merged[uf.find(i)].append(m)
-        clusters.extend((key, c) for c in merged.values())
+        clusters.extend((f"res:{key}", c) for c in merged.values())
     return clusters
 
 
