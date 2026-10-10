@@ -36,6 +36,17 @@ CHANNEL_PLATFORM = {
     "refund request", "自动取消", "一键取消", "退款申诉", "取消订阅",
 }
 GAME_PERF = {"game", "games", "手游", "steam", "fps", "帧率", "掉帧"}
+
+# demands a general AI agent can execute online end-to-end (no hardware, no
+# local resident process, no proprietary data): support calls, cancel/
+# refund/delete-account chores, disputes, form filling
+AGENT_REPLACEABLE = {
+    "customer support", "customer service", "support", "cancel", "cancellation",
+    "cancel subscription", "refund", "refund request", "chargeback", "dispute",
+    "delete account", "account deletion", "close account", "complaint",
+    "file a claim", "opt out", "unsubscribe", "客服", "取消订阅", "退款",
+    "注销", "维权", "催办", "投诉", "申诉",
+}
 INFO_AGG = {"聚合", "比价", "提醒", "monitor", "tracking", "alert", "aggregator",
             "comparison", "比价", "信息聚合"}
 
@@ -103,12 +114,24 @@ def rule_barrier(members, stats):
     if gov_only:
         # cap: pure government demand can never be an easy indie entry
         score = min(score, 0.35)
+
+    # general-purpose AI agents (Meta Muse, Claude/ChatGPT assistants) can
+    # execute "online errand" demands — support calls, cancellations, refunds,
+    # account deletion, disputes — directly, so these are never low-barrier.
+    if _hits(text, AGENT_REPLACEABLE):
+        score = min(score, 0.5)
+        notes.append("通用 agent 可代办（客服/退订/维权类线上任务，正面强敌）")
     return score, "rule", "；".join(notes) if notes else "低门槛"
 
 
 BARRIER_ARBITRATION_SYSTEM = """你是独立开发者进入门槛评估员。给定需求主题（关键词 + 代表性痛点 + 当前门槛说明），
 从四个维度评估综合门槛：技术（底层/引擎/驱动/实时集成=高门槛）、合规（医疗/金融/法律/政府资质）、
 资源（重资本/供应链/线下履约/数据规模）、渠道（巨头核心功能/平台政策限制）。
-输出 JSON：{"barriers": [{"id": 序号, "barrier": 0.0到1.0（越高=门槛越低）, "note": "一句话主要门槛（中文）"}, ...]}。
+**特别判据（通用 AI agent 替代）**：如果该需求的核心价值可以被通用 AI 个人 agent
+（如 Meta Muse、Claude/ChatGPT 类通用助手）在不依赖专用硬件/本地常驻进程/专有数据的情况下
+直接代办——例如打电话客服、在线维权、退订、删账户、追扣费、填写表单这类"线上代办"任务——
+则属于高门槛（强对手正面覆盖），barrier 应判 0.1-0.3。
+只有当需求依赖本地常驻系统干预、专用数据积累或硬件交付时，才可免于该判据。
+输出 JSON：{"barriers": [{"id": 序号, "barrier": 0.0到1.0（越高=门槛越低/越容易进入）, "note": "一句话主要门槛（中文）"}, ...]}。
 参考刻度：纯信息聚合/内容工具=0.85-1.0；普通 SaaS=0.7-0.85；巨头核心功能正面竞争=0.4-0.6；
-平台政策灰色地带=0.4-0.6；底层技术或强监管=0.1-0.3。"""
+平台政策灰色地带=0.4-0.6；底层技术、强监管或通用 agent 可代办=0.1-0.3。"""
