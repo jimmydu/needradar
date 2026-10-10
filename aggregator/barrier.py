@@ -47,6 +47,17 @@ AGENT_REPLACEABLE = {
     "file a claim", "opt out", "unsubscribe", "客服", "取消订阅", "退款",
     "注销", "维权", "催办", "投诉", "申诉",
 }
+
+# demands whose viable business model depends on legal practice / attorney
+# relationships (class actions, settlement claims, law-firm lead gen, case
+# management) — a dead barrier for a non-US-entity solo developer. Compound
+# phrases only to avoid false hits on generic insurance claims.
+LEGAL_SERVICE = {
+    "class action", "settlement", "settlement claim", "settlement fund",
+    "claim form", "payout",
+    "lawsuit", "legal claim", "attorney", "law firm", "litigation",
+    "集体诉讼", "和解金", "和解", "诉讼", "索赔申请", "理赔金",
+}
 INFO_AGG = {"聚合", "比价", "提醒", "monitor", "tracking", "alert", "aggregator",
             "comparison", "比价", "信息聚合"}
 
@@ -121,6 +132,11 @@ def rule_barrier(members, stats):
     if _hits(text, AGENT_REPLACEABLE):
         score = min(score, 0.5)
         notes.append("通用 agent 可代办（客服/退订/维权类线上任务，正面强敌）")
+    # legal-practice-dependent demands (class actions, settlement claims,
+    # law-firm lead gen): dead barrier without a US entity / bar admission
+    if _hits(text, LEGAL_SERVICE):
+        score = min(score, 0.3)
+        notes.append("法律服务依赖：集体诉讼/和解申领需执业资质或律师关系")
     return score, "rule", "；".join(notes) if notes else "低门槛"
 
 
@@ -132,6 +148,10 @@ BARRIER_ARBITRATION_SYSTEM = """你是独立开发者进入门槛评估员。给
 直接代办——例如打电话客服、在线维权、退订、删账户、追扣费、填写表单这类"线上代办"任务——
 则属于高门槛（强对手正面覆盖），barrier 应判 0.1-0.3。
 只有当需求依赖本地常驻系统干预、专用数据积累或硬件交付时，才可免于该判据。
+**特别判据（法律服务依赖）**：如果需求的可行商业模式依赖法律服务关系或执业资质——
+集体诉讼（class action）、和解金申领（settlement claim）、法律 lead gen、案件管理等——
+对无美国实体/律师执业资格的个人开发者是死门槛，barrier 应判 0.1-0.3。
+（claim filing 一侧被通用 agent 和 DoNotPay 覆盖，案件管理/lead gen 一侧必须有律师关系。）
 输出 JSON：{"barriers": [{"id": 序号, "barrier": 0.0到1.0（越高=门槛越低/越容易进入）, "note": "一句话主要门槛（中文）"}, ...]}。
 参考刻度：纯信息聚合/内容工具=0.85-1.0；普通 SaaS=0.7-0.85；巨头核心功能正面竞争=0.4-0.6；
 平台政策灰色地带=0.4-0.6；底层技术、强监管或通用 agent 可代办=0.1-0.3。"""
