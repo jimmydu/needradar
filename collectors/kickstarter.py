@@ -163,8 +163,19 @@ def collect(date_from, date_to, session):
                 blurb = row.get("blurb") or ""
                 if not _looks_software(rname, blurb, cat, main_cat):
                     continue
-                if (row.get("state") or "") not in ("live", "successful"):
+                ks_state = row.get("state") or ""
+                # suspended/canceled/failed are never payment-intent evidence.
+                # Note: the monthly snapshot can lag KS moderation actions — a
+                # project suspended mid-campaign may still read "live" here
+                # (observed 2026-10-10). The quality floor below catches the
+                # worst of these ($90 / 1 backer class of dead projects).
+                if ks_state not in ("live", "successful"):
                     continue
+                pledged = _to_float(row.get("usd_pledged") or row.get("converted_pledged_amount")
+                                    or row.get("pledged"))
+                backers = int(float(row.get("backers_count") or 0))
+                if ks_state == "live" and (pledged or 0) < 500 and backers < 5:
+                    continue  # dead/traction-free live project = noise
                 try:
                     launched = float(row.get("launched_at") or 0)
                 except ValueError:
@@ -174,12 +185,8 @@ def collect(date_from, date_to, session):
                 pid = str(row.get("id") or "").strip()
                 if not pid:
                     continue
-                pledged = _to_float(row.get("usd_pledged") or row.get("converted_pledged_amount")
-                                    or row.get("pledged"))
-                backers = int(float(row.get("backers_count") or 0))
                 proj_url = _parse_urls(row.get("urls"))
                 state_code = _parse_location_state(row.get("location"))
-                ks_state = row.get("state") or ""
                 # signal time: live projects are still raising until their
                 # deadline — use min(deadline, now); finished ones keep launch
                 if ks_state == "live":
