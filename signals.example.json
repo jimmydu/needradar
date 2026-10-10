@@ -1,22 +1,14 @@
 [
   {
-    "title": "Peak Design Travel Tripod 复刻版众筹破 $5M",
-    "platform": "kickstarter",
-    "url": "https://www.kickstarter.com/projects/peak-design/travel-tripod-by-peak-design",
-    "description": "摄影配件众筹项目，主打便携三脚架。评论区大量用户询问发货时间与额外配件购买，付费意愿强。",
-    "amount": 12143645,
-    "amount_note": "已筹得 $12,143,645，目标 $500,000，超标 24 倍",
-    "signal_type": "2",
-    "p_level": 5,
-    "posted_at": "2026-10-08",
-    "notes": "most-funded 榜单前 10，连续 3 周在榜"
-  },
-  {
-    "title": "中小企业主抱怨 QuickBooks 涨价后寻求替代记账工具",
-    "platform": "朋友推荐",
-    "description": "线下交流中提到 QuickBooks 年费涨到 $400+，正在比较 Wave 和 Xero，愿意为好用的迁移工具付费。",
+    "_comment": "这是格式示例（虚构数据），展示 manual_entry.py 批量导入的 JSON 结构。请勿直接导入本文件——它曾被误导入生产库并已清除。复制本文件为新文件后填入真实信号再导入。",
+    "title": "示例：某 SaaS 涨价引发用户抱怨",
+    "platform": "reddit",
+    "url": "https://example.com/thread/123",
+    "description": "用户抱怨某工具年费翻倍，正在寻找替代品，愿意为迁移工具付费。",
+    "amount": null,
     "signal_type": "4",
     "p_level": 3,
-    "notes": "信息来自朋友，无公开链接"
+    "posted_at": "2026-01-01",
+    "notes": "字段说明：signal_type 1=政府采购 2=众筹 3=应用评论 4=社媒/线下；p_level 1-5 付费意愿强度"
   }
 ]
