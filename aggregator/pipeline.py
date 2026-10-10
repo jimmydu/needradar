@@ -10,6 +10,7 @@ from datetime import date, datetime, timedelta
 
 import requests
 
+from aggregator import barrier as barrier_mod
 from aggregator import fit, scoring
 from aggregator.clustering import cluster_signals, cluster_tokens, find_merge_candidates
 from storage import Cluster, Extraction, RawSignal
@@ -178,6 +179,38 @@ def _fit_arbitrate(results, usage, batch=15):
             log.warning("fit arbitration batch failed: %s", e)
 
 
+def _barrier_arbitrate(results, usage, batch=15):
+    """LLM re-scores ambiguous barrier values in place."""
+    for start in range(0, len(results), batch):
+        chunk = results[start:start + batch]
+        lines = []
+        for n, r in enumerate(chunk, 1):
+            lines.append(f"{n}. 关键词: {', '.join(r['keywords'][:8])}｜"
+                         f"代表痛点: {r['summary'][:120]}｜当前门槛说明: {r['barrier_note']}")
+        try:
+            parsed, ptok, ctok = _chat_json(barrier_mod.BARRIER_ARBITRATION_SYSTEM,
+                                            "\n".join(lines))
+            usage["calls"] += 1
+            usage["prompt_tokens"] += ptok
+            usage["completion_tokens"] += ctok
+            by_id = {m.get("id"): m for m in parsed.get("barriers", [])}
+            for n, r in enumerate(chunk, 1):
+                m = by_id.get(n)
+                if not m:
+                    continue
+                try:
+                    val = float(m.get("barrier"))
+                except (TypeError, ValueError):
+                    continue
+                if 0 <= val <= 1:
+                    r["barrier"] = round(val, 3)
+                    r["barrier_method"] = "llm"
+                    if m.get("note"):
+                        r["barrier_note"] = m["note"]
+        except Exception as e:
+            log.warning("barrier arbitration batch failed: %s", e)
+
+
 def _rule_entry_point(r):
     st = r["stats"]
     kw = r["keywords"][0] if r["keywords"] else r["summary"][:20]
@@ -203,7 +236,8 @@ def _llm_entry_points(results, usage, batch=25):
         for n, r in enumerate(chunk, 1):
             lines.append(f"{n}. 关键词: {', '.join(r['keywords'][:8])}｜"
                          f"代表痛点: {r['summary'][:120]}｜"
-                         f"来源: {dict(r['stats']['sources'])}｜代码可行性: {r['software_fit']}")
+                         f"来源: {dict(r['stats']['sources'])}｜代码可行性: {r['software_fit']}｜"
+                         f"门槛: {r['barrier']}（{r['barrier_note']}）")
         try:
             parsed, ptok, ctok = _chat_json(fit.ENTRY_POINT_SYSTEM, "\n".join(lines))
             usage["calls"] += 1
@@ -254,12 +288,15 @@ def run(session, weeks=4, use_llm=True, dry_run=False, run_date=None):
         conf = scoring.confidence_score(st)
         acc = scoring.accessibility_score(st)
         fit_val, fit_method, fit_note = fit.rule_software_fit(members, st)
+        barrier_val, barrier_method, barrier_note = barrier_mod.rule_barrier(members, st)
         kws, reps, topic = _cluster_brief((key, members))
         results.append({
             "cluster": members, "topic": topic, "stats": st, **wps,
             "confidence": conf, "accessibility": acc,
             "software_fit": fit_val, "fit_method": fit_method, "fit_note": fit_note,
-            "final_score": round(wps["wps"] * conf * acc * fit_val, 4),
+            "barrier": barrier_val, "barrier_method": barrier_method,
+            "barrier_note": barrier_note,
+            "final_score": round(wps["wps"] * conf * acc * fit_val * barrier_val, 4),
             "name": topic or "、".join(kws[:3]),
             "summary": (f"{topic}：{reps[0]}" if topic and reps else
                         (topic or (reps[0] if reps else "、".join(kws[:3])))),
@@ -267,14 +304,16 @@ def run(session, weeks=4, use_llm=True, dry_run=False, run_date=None):
             "quotes": evidence_quotes(members),
         })
 
-    # LLM arbitration for ambiguous-fit clusters near the top (cost-capped)
+    # LLM arbitration for ambiguous clusters near the top (cost-capped)
     if use_llm and _llm_configured():
         results.sort(key=lambda r: -(r["wps"] * r["confidence"] * r["accessibility"]))
         ambiguous = [r for r in results[:120] if 0.3 < r["software_fit"] < 0.65]
         _fit_arbitrate(ambiguous, usage)
+        ambiguous_b = [r for r in results[:120] if 0.45 < r["barrier"] < 0.95]
+        _barrier_arbitrate(ambiguous_b, usage)
         for r in results:
-            r["final_score"] = round(r["wps"] * r["confidence"]
-                                     * r["accessibility"] * r["software_fit"], 4)
+            r["final_score"] = round(r["wps"] * r["confidence"] * r["accessibility"]
+                                     * r["software_fit"] * r["barrier"], 4)
 
     # entry points: rule template for all, LLM polish for the visible top
     results.sort(key=lambda r: -r["final_score"])
@@ -304,6 +343,7 @@ def run(session, weeks=4, use_llm=True, dry_run=False, run_date=None):
                 final_score=r["final_score"],
                 software_fit=r["software_fit"], fit_method=r["fit_method"],
                 entry_point=r["entry_point"],
+                barrier=r["barrier"], barrier_note=r["barrier_note"],
                 window_start=window_start, window_end=window_end,
             ))
         session.commit()

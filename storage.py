@@ -81,6 +81,8 @@ class Cluster(Base):
     software_fit = Column(Float)
     fit_method = Column(String(16))
     entry_point = Column(Text)
+    barrier = Column(Float)
+    barrier_note = Column(Text)
     window_start = Column(DateTime)
     window_end = Column(DateTime)
     created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
@@ -106,7 +108,9 @@ def _migrate(engine):
     ccols = {c["name"] for c in inspect(engine).get_columns("clusters")}
     for col, ddl in (("software_fit", "ALTER TABLE clusters ADD COLUMN software_fit FLOAT"),
                      ("fit_method", "ALTER TABLE clusters ADD COLUMN fit_method VARCHAR(16)"),
-                     ("entry_point", "ALTER TABLE clusters ADD COLUMN entry_point TEXT")):
+                     ("entry_point", "ALTER TABLE clusters ADD COLUMN entry_point TEXT"),
+                     ("barrier", "ALTER TABLE clusters ADD COLUMN barrier FLOAT"),
+                     ("barrier_note", "ALTER TABLE clusters ADD COLUMN barrier_note TEXT")):
         if col not in ccols:
             with engine.begin() as conn:
                 conn.execute(text(ddl))

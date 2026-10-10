@@ -33,7 +33,8 @@ def render_report(results, usage, top, window_desc, run_date):
                 f"多样性 {r['wps_diversity']} / 金额 {r['wps_amount']} / 趋势 {r['wps_trend']} / 地域 {r['wps_geo']}）",
                 f"- 置信度：{r['confidence']}｜可进入性：{r['accessibility']}",
                 fit,
-                f"- **最终分：{r['final_score']}**（= WPS × 置信度 × 可进入性 × 代码可行性）",
+                f"- 门槛高度：**{r['barrier']}**（{r['barrier_method']}）— {r['barrier_note']}",
+                f"- **最终分：{r['final_score']}**（= WPS × 置信度 × 可进入性 × 代码可行性 × 门槛高度）",
                 f"- 切入点：{r['entry_point']}",
                 f"- 证据：{st['n']} 条信号，来源 {json.dumps(dict(st['sources']), ensure_ascii=False)}，"
                 f"P 级分布 {json.dumps({str(k): v for k, v in st['p_dist'].items()})}，"
@@ -50,7 +51,7 @@ def render_report(results, usage, top, window_desc, run_date):
     lines = [
         f"# NeedRadar Top {top} 需求榜单（{run_date}）",
         "",
-        f"窗口：{window_desc}｜主榜按 最终分 = WPS × 置信度 × 可进入性 × 代码可行性 排序；"
+        f"窗口：{window_desc}｜主榜按 最终分 = WPS × 置信度 × 可进入性 × 代码可行性 × 门槛高度 排序；"
         "附纯 WPS 榜 Top 20（§9.5）",
         "",
     ]
@@ -85,6 +86,7 @@ def main():
         print(f"{rank:2d}. [{r['final_score']:.3f}] WPS={r['wps']:.3f} "
               f"conf={r['confidence']:.2f} acc={r['accessibility']:.2f} "
               f"fit={r['software_fit']:.2f}({r['fit_method']}) "
+              f"bar={r['barrier']:.2f}({r['barrier_method']}) "
               f"P{st['p_max']} n={st['n']} src={st['n_sources']} | {r['summary'][:60]}")
 
     run_date = date.today().isoformat()
