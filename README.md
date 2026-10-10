@@ -14,6 +14,9 @@ This repository contains the data collection layer. All collectors use **officia
 | App Store | Apple official RSS feed | App reviews + top-grossing chart snapshots |
 | Reddit | Official Data API (`collectors/reddit.py`, OAuth2) — pending Responsible Builder Policy approval; public RSS used as interim fallback (`collectors/reddit_rss.py`) | Community pain-point posts |
 | Freelancer.com | Official API (approval pending) | Outsourcing project listings & budgets |
+| Indiegogo | Official public API (no auth, Gamefound platform) | Active crowdfunding campaigns (pledged/goal/backers) |
+| Kickstarter | Lightweight scraper of discover pages + embedded project JSON; currently Cloudflare-blocked, degrades gracefully (Webrobots monthly CSV as zero-risk fallback, not wired) | Most-funded/newest tech campaigns |
+| YouTube | Official Data API v3 (`YOUTUBE_API_KEY`, 10k units/day) | Pain-keyword short videos + top comments |
 
 Data handling: read-only collection, aggregate statistical analysis only, no redistribution of raw content, no user profiling. Collected records are stored in a private local database and refreshed per each platform's API terms.
 
@@ -69,6 +72,7 @@ uv venv && uv pip install -r requirements.txt   # 或 python3 -m venv .venv && p
 - `SAM_GOV_API_KEY_FILE`：默认 `./sam.gov.api.key`（纯文本 key，文件已在 .gitignore 中）。
 - `APPSTORE_APPS_FILE`：默认 `./appstore_apps.txt`（每行 `app_id  # 注释`）。每日评论采集目标 = 该清单 + 当日畅销榜 top 100 合并去重。
 - `REDDIT_SUBS_FILE`：默认 `./reddit_subs.txt`（每行一个 subreddit 名）。
+- `YOUTUBE_API_KEY`：YouTube Data API v3 key。申请：Google Cloud Console → 建项目 → 启用 "YouTube Data API v3" → 凭据 → 创建 API 密钥。免费配额 10,000 单位/天，本采集器每日约用 ~700 单位（6 次 search×100 + 5 次 commentThreads×1）。未配置自动跳过。
 - `FREELANCER_API_KEY_FILE`：默认 `./freelancer.api.key`（纯文本 token，已在 .gitignore）。也可用 `FREELANCER_ACCESS_TOKEN` 环境变量。
 
 ### Freelancer.com 凭证
@@ -186,6 +190,9 @@ source_id 为 `manual_` + title/platform/url 的哈希，同一信号重复录�
 - `collectors/reddit_rss.py` — Reddit 公开 RSS 兜底（免认证，source='reddit_rss'，5s 间隔 + 429/503 退避）
 - `collectors/reddit.py` — Reddit 帖子（官方 Data API，OAuth client_credentials，signal_type=post，raw_json 含 score/num_comments/link_flair_text；当前审批制，有凭证才跑）
 - `collectors/freelancer.py` — Freelancer.com 活跃项目（官方 API，`freelancer-oauth-v1` header，signal_type=外包发布/已完成外包，raw_json 含 budget/bids/雇主国家/技能标签）
+- `collectors/indiegogo.py` — Indiegogo 在筹项目（官方公共 API 免认证，一次取全量；文本规则滤硬件，amount=已筹金额，raw_json 含 goal/backers/comments）
+- `collectors/kickstarter.py` — Kickstarter 轻量爬虫（discover 页 + window.current_project 内嵌 JSON；当前被 Cloudflare 403 拦截，优雅降级记日志不阻塞；零风险兜底 Webrobots 月度 CSV 未接）
+- `collectors/youtube.py` — YouTube Data API v3（`YOUTUBE_API_KEY`，痛点关键词 search.list + 热门视频 commentThreads；未配置 key 时跳过记日志）
 - `storage.py` — SQLAlchemy 模型与落库（raw_signals 表；启动时自动补 `rating` 列迁移）
 - `extractor/rules.py` — 规则抽取（P 级判定 + 金额/预算 cost_hint 正则）
 - `extractor/llm.py` — LLM 语义抽取（OpenAI 兼容，evidence quote 契约，token 计量）

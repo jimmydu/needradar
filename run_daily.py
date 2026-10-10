@@ -1,16 +1,31 @@
 """Daily entrypoint: run all collectors sequentially and print a summary.
 
-Later wiring to Prefect: each collector's `collect()` is already a pure
+Each collector runs in its own try/except so one failure never blocks the
+rest. Later wiring to Prefect: each collector's `collect()` is already a pure
 (date_from, date_to, session) function, ready to become a Prefect task.
 """
 import argparse
 import logging
 from datetime import date, datetime, timedelta
 
-from collectors import appstore, cfpb, freelancer, reddit, reddit_rss, sam_gov, usaspending
+from collectors import (appstore, cfpb, freelancer, indiegogo, kickstarter,
+                        reddit, reddit_rss, sam_gov, usaspending, youtube)
 from storage import get_session
 
 log = logging.getLogger(__name__)
+
+COLLECTORS = [
+    ("sam_gov", sam_gov),
+    ("usaspending", usaspending),
+    ("appstore", appstore),
+    ("cfpb", cfpb),
+    ("reddit_rss", reddit_rss),
+    ("reddit", reddit),
+    ("freelancer", freelancer),
+    ("indiegogo", indiegogo),
+    ("kickstarter", kickstarter),
+    ("youtube", youtube),
+]
 
 
 def main():
@@ -18,28 +33,21 @@ def main():
     p = argparse.ArgumentParser(description="NeedRadar daily collection")
     p.add_argument("--from", dest="date_from")
     p.add_argument("--to", dest="date_to")
-    p.add_argument("--source", choices=["sam_gov", "usaspending", "appstore", "cfpb",
-                                        "reddit_rss", "reddit", "freelancer", "all"], default="all")
+    p.add_argument("--source", choices=[n for n, _ in COLLECTORS] + ["all"], default="all")
     args = p.parse_args()
     date_to = datetime.strptime(args.date_to, "%Y-%m-%d").date() if args.date_to else date.today() - timedelta(days=1)
     date_from = datetime.strptime(args.date_from, "%Y-%m-%d").date() if args.date_from else date_to
 
     session = get_session()
     summary = {}
-    if args.source in ("sam_gov", "all"):
-        summary["sam_gov"] = sam_gov.collect(date_from, date_to, session)
-    if args.source in ("usaspending", "all"):
-        summary["usaspending"] = usaspending.collect(date_from, date_to, session)
-    if args.source in ("appstore", "all"):
-        summary["appstore"] = appstore.collect(date_from, date_to, session)
-    if args.source in ("cfpb", "all"):
-        summary["cfpb"] = cfpb.collect(date_from, date_to, session)
-    if args.source in ("reddit_rss", "all"):
-        summary["reddit_rss"] = reddit_rss.collect(date_from, date_to, session)
-    if args.source in ("reddit", "all"):
-        summary["reddit"] = reddit.collect(date_from, date_to, session)
-    if args.source in ("freelancer", "all"):
-        summary["freelancer"] = freelancer.collect(date_from, date_to, session)
+    for name, mod in COLLECTORS:
+        if args.source not in (name, "all"):
+            continue
+        try:
+            summary[name] = mod.collect(date_from, date_to, session)
+        except Exception as e:
+            log.error("collector %s crashed: %s", name, e)
+            summary[name] = {"inserted": 0, "skipped": 0, "failed": 1, "requests": 0}
 
     print("\n===== NeedRadar collection summary =====")
     print(f"window: {date_from} .. {date_to}")

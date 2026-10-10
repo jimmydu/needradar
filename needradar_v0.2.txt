@@ -127,6 +127,9 @@
 | Freelancer.com | 官方 REST API（OAuth，需申请审批） | P3–P5 | 唯一能批量拉"项目+出价"的外包平台；条款要求缓存 24h 刷新、不得转售数据 |
 | App Store 评论 | Apple 官方 RSS/JSON 端点，免认证 | P0–P2 | 仅最近约 500 条/国家 |
 | Google Play 评论 | 开源库 / 第三方托管 API（SerpApi 等） | P0–P2 | 灰色但实务被广泛接受，风险低 |
+| Indiegogo | 官方公共 API（Gamefound 平台），免认证 | P5 | 2025-10 迁移后有官方 API；无分类字段，软硬件靠文本规则；已实现（2026-10-10） |
+| Kickstarter | 无官方 API；轻量爬虫（discover 页 + 内嵌 JSON），兜底 Webrobots 月度 CSV | P5 | 当前被 Cloudflare 403 拦截，采集器优雅降级（2026-10-10 实测）；爬虫属灰色，注意 ToS |
+| YouTube | 官方 Data API v3，免费 10,000 单位/天 | P1–P2 | 痛点关键词短视频 + 热门评论；需 Google Cloud Console 申请 key；已实现（2026-10-10，待配 key） |
 
 **Tier B — 官方付费 API（预算允许时启用）**
 
@@ -142,8 +145,9 @@
 
 **明确排除（无合法批量渠道）**
 
-- LinkedIn Jobs、Indeed、Glassdoor、Upwork、Fiverr、Kickstarter、Indiegogo、BBB、Quora、TikTok。
-- 理由：无官方数据 API 或已关停，ToS 明文禁止爬虫，反爬强且有封禁/诉讼先例。Kickstarter/Indiegogo 的 P5 众筹信号由 Freelancer.com 已完成项目和 SAM.gov 合同授予部分替代。
+- LinkedIn Jobs、Indeed、Glassdoor、Upwork、Fiverr、BBB、Quora、TikTok。
+- 理由：无官方数据 API 或已关停，ToS 明文禁止爬虫，反爬强且有封禁/诉讼先例。
+- （2026-10-10 修订）Kickstarter/Indiegogo 移出排除清单：Indiegogo 迁 Gamefound 后有官方公共 API（Tier A）；Kickstarter 改轻量爬虫 + Webrobots CSV 兜底（见 Tier A 表备注）。
 
 ### 5.2 采集要求
 
