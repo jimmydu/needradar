@@ -71,20 +71,46 @@ def _chat_json(system, user, timeout=None, tier="light"):
 
 
 def _cluster_brief(cluster, max_items=3):
-    """cluster: (bucket_key, members)."""
+    """cluster: (bucket_key, members). Reps prefer distinct sources so the
+    summary reflects the cluster's composition, not one dominant source."""
     key, members = cluster
     kws = [k for k, _ in cluster_tokens(members).most_common(8)]
     reps = []
-    for s, e, _ in sorted(members, key=lambda m: -(m[1].p_level or 0)):
-        text = (e.pain_point or s.title or "").strip()
-        if text and text not in reps:
+    seen_src = set()
+    ordered = sorted(members, key=lambda m: -(m[1].p_level or 0))
+    for distinct_only in (True, False):
+        for s, e, _ in ordered:
+            text = (e.pain_point or s.title or "").strip()
+            if not text or text in reps:
+                continue
+            if distinct_only and s.source in seen_src:
+                continue
             reps.append(text[:150])
+            seen_src.add(s.source)
+            if len(reps) >= max_items:
+                break
         if len(reps) >= max_items:
             break
     topic = key[6:] if key.startswith("topic:") else None
     if key.startswith("res:crowd:"):
         topic = f"众筹·{key[10:]}"
     return kws, reps, topic
+
+
+def rep_links(members, max_links=4):
+    """Representative original-signal links (skip sources without URLs)."""
+    out = []
+    seen_src = set()
+    for s, e, _ in sorted(members, key=lambda m: -(m[1].p_level or 0)):
+        if not s.url:
+            continue
+        if s.source in seen_src and len(out) >= len(seen_src):
+            continue
+        out.append({"title": (s.title or "")[:80], "url": s.url, "source": s.source})
+        seen_src.add(s.source)
+        if len(out) >= max_links:
+            break
+    return out
 
 
 def llm_arbitrate(clusters, pairs, usage):
@@ -267,10 +293,15 @@ def _llm_entry_points(results, usage, batch=25):
             usage["calls"] += 1
             usage["prompt_tokens"] += ptok
             usage["completion_tokens"] += ctok
-            by_id = {m.get("id"): m.get("entry") for m in parsed.get("entries", [])}
+            by_id = {m.get("id"): m for m in parsed.get("entries", [])}
             for n, r in enumerate(chunk, 1):
-                if by_id.get(n):
-                    r["entry_point"] = by_id[n]
+                m = by_id.get(n)
+                if not m:
+                    continue
+                if m.get("entry"):
+                    r["entry_point"] = m["entry"]
+                comps = [c for c in (m.get("comps") or []) if isinstance(c, str)][:3]
+                r["competitors"] = comps
         except Exception as e:
             log.warning("entry point batch failed: %s", e)
 
@@ -331,6 +362,8 @@ def run(session, weeks=4, use_llm=True, dry_run=False, run_date=None):
                         (topic or (reps[0] if reps else "、".join(kws[:3])))),
             "keywords": kws,
             "quotes": evidence_quotes(members),
+            "links": rep_links(members),
+            "competitors": [],
         })
 
     # LLM arbitration for ambiguous clusters near the top (cost-capped)

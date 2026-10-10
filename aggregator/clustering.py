@@ -64,6 +64,40 @@ _LATIN_KW = {t: re.compile(r"\b(?:" + "|".join(re.escape(k) for k in kws if not 
              for t, kws in CANONICAL_TOPICS}
 _CJK_KW = {t: [k for k in kws if re.search(r"[一-鿿]", k)] for t, kws in CANONICAL_TOPICS}
 
+# Sub-split rules for canonical topics that mix distinct opportunities
+# (e.g. 定价与涨价 contains both game-pricing and SaaS-pricing pains —
+# different products). First matching sub-label wins; no match -> 其他.
+TOPIC_SUBS = {
+    "定价与涨价": [
+        ("游戏", ["game", "steam", "游戏", "手游", "xbox", "playstation", "nintendo",
+                "in-game", "battle pass", "gacha", "roblox"]),
+        ("软件/SaaS", ["slack", "quickbooks", "notion", "saas", "software", "app",
+                    "subscription", "订阅", "seat", "license", "workspace", "adobe",
+                    "microsoft", "excel"]),
+        ("流媒体/内容", ["netflix", "hulu", "disney", "spotify", "youtube", "streaming",
+                    "premium", "流媒体", "会员"]),
+    ],
+    "订阅与扣费": [
+        ("游戏/内购", ["game", "games", "手游", "roblox", "coin", "积分", "in-game"]),
+        ("软件/SaaS", ["app", "software", "saas", "subscription", "订阅", "quickbooks"]),
+    ],
+}
+
+
+def _subtopic(topic, text):
+    """Split a canonical topic into an industry sub-label when configured."""
+    subs = TOPIC_SUBS.get(topic)
+    if not subs:
+        return topic
+    for label, kws in subs:
+        for k in kws:
+            if re.search(r"[一-鿿]", k):
+                if k in text:
+                    return f"{topic}·{label}"
+            elif re.search(rf"\b{re.escape(k)}\b", text):
+                return f"{topic}·{label}"
+    return f"{topic}·其他"
+
 
 def canonical_topic(signal, extraction, raw):
     """First matching canonical topic, or None. Gov procurement sources are
@@ -83,9 +117,9 @@ def canonical_topic(signal, extraction, raw):
     for topic, _ in CANONICAL_TOPICS:
         rx = _LATIN_KW.get(topic)
         if rx and rx.search(text):
-            return topic
+            return _subtopic(topic, text)
         if any(k in text for k in _CJK_KW.get(topic, [])):
-            return topic
+            return _subtopic(topic, text)
     return None
 
 _CJK_RE = re.compile(r"[一-鿿]+")

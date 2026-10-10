@@ -43,6 +43,7 @@ def render_report(survivors, filtered, excluded_big, usage, weeks, run_date):
                 f"- 门槛高度：**{r['barrier']}**（{r['barrier_method']}）— {r['barrier_note']}",
                 f"- **最终分：{r['final_score']}**（= WPS × 置信度 × 可进入性 × 代码可行性 × 门槛高度）",
                 f"- 切入点：{r['entry_point']}",
+                "- 竞品：" + ("、".join(r["competitors"]) if r.get("competitors") else "待补充（LLM 不可用或未识别）"),
                 f"- 证据：{st['n']} 条信号，来源 {json.dumps(dict(st['sources']), ensure_ascii=False)}，"
                 f"P 级分布 {json.dumps({str(k): v for k, v in st['p_dist'].items()})}，"
                 f"中位金额 {fmt_amount(st['median_amount'])}",
@@ -51,6 +52,10 @@ def render_report(survivors, filtered, excluded_big, usage, weeks, run_date):
                 lines.append("- 原文引用：")
                 for q in r["quotes"]:
                     lines.append(f"  > {q}")
+            if r.get("links"):
+                lines.append("- 来源链接：")
+                for l in r["links"]:
+                    lines.append(f"  - [{l['source']}] {l['title']} — {l['url']}")
             lines.append("")
         return lines
 
