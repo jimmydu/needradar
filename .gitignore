@@ -8,3 +8,4 @@ __pycache__/
 .DS_Store
 *.db.bak
 kickstarter_state.json
+.feishu_chat_id
