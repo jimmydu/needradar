@@ -18,6 +18,7 @@ This repository contains the data collection layer. All collectors use **officia
 | Kickstarter | Webrobots monthly full-site CSV snapshots (~100MB zip, free); direct scraping is Cloudflare-blocked | Most-funded/newest tech campaigns |
 | YouTube | Official Data API v3 (`YOUTUBE_API_KEY`, 10k units/day) | Pain-keyword short videos + top comments |
 | Google News | RSS keyword search (no auth) | Trigger events: policy changes, price hikes, shortages, class-action settlements, shutdowns |
+| App Store charts | Apple RSS (top-grossing + top-paid × key genres) + iTunes Lookup enrichment | Indie high-revenue apps (`run_indie_report.py`, `indie_blacklist.txt`) |
 
 Data handling: read-only collection, aggregate statistical analysis only, no redistribution of raw content, no user profiling. Collected records are stored in a private local database and refreshed per each platform's API terms.
 
@@ -195,6 +196,8 @@ source_id 为 `manual_` + title/platform/url 的哈希，同一信号重复录�
 - `collectors/kickstarter.py` — Kickstarter via Webrobots 月度全站 CSV（~100MB zip，直连爬虫已被 Cloudflare 拦死弃用）。月度频率控制：`kickstarter_state.json` 记录已处理的数据集月份，同月秒退；软件类过滤（Apps/Software/Web/Video Games 白名单 + Technology/Games 下文本规则滤硬件）；同一项目跨月出现时**更新** amount 并在 raw_json 记 `pledged_history`/`pledged_delta`（月度增速信号）
 - `collectors/youtube.py` — YouTube Data API v3（`YOUTUBE_API_KEY`，痛点关键词 search.list + 热门视频 commentThreads；未配置 key 时跳过记日志）
 - `collectors/news_rss.py` — Google News RSS 关键词搜索（免认证，词表 `news_queries.txt`：通用痛点词 + 软件机会词；3s 间隔）。新闻是题材雷达：不参与痛点主题聚类，按触发事件类型独立成簇
+- `collectors/appstore_charts.py` — App Store 榜单快照（top-grossing + top-paid × 总榜 + productivity/utilities/developer-tools/health-fitness/education，source_id 含日期/榜/品类/名次，支持榜位变化趋势）
+- `run_indie_report.py` — 小体量高收入 App 榜：iTunes Lookup 富化（缓存进 `app_indie` 表 7 天）+ indie 启发式打分（名下 app 数/人名形态/独立官网/评分数，巨头超百万评分降权，`indie_blacklist.txt` 黑名单）→ `reports/indie_top_apps_YYYYMMDD.md`（收入层级为榜位粗分桶，非 ARR）
 - `extractor/rules.py` 另含 5 类触发事件模式（新政策生效→合规工具 / 价格差涨价→比价撮合 / 短缺积压→调度 / 集体诉讼和解→理赔自动化 / 服务关停→迁移替代），命中写 `extractions.trigger_type`
 - GDELT 爆发检测 TODO：api.gdeltproject.org 对本机 IP 持续限速（2026-10-10 实测），暂缓实现
 - `storage.py` — SQLAlchemy 模型与落库（raw_signals 表；启动时自动补 `rating` 列迁移）

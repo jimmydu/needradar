@@ -90,6 +90,24 @@ class Cluster(Base):
     created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
 
 
+class AppIndie(Base):
+    """iTunes Lookup enrichment cache + indie heuristic per app."""
+    __tablename__ = "app_indie"
+
+    app_id = Column(String(32), primary_key=True)
+    name = Column(Text)
+    seller_name = Column(Text)
+    artist_id = Column(String(32))
+    artist_app_count = Column(Integer)
+    seller_url = Column(Text)
+    user_rating_count = Column(Integer)
+    price = Column(Float)
+    indie_score = Column(Integer)
+    indie_reasons = Column(Text)
+    blacklist_hit = Column(String(64))
+    updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+
+
 def get_engine(url=None):
     return create_engine(url or DATABASE_URL)
 

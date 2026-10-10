@@ -1,0 +1,197 @@
+# 大厂黑名单（sellerName 小写子串匹配，命中即排除 indie 判定）
+google
+meta
+microsoft
+match group
+tinder
+hinge
+bumble
+duolingo
+tencent
+netflix
+disney
+roblox
+take-two
+electronic arts
+ea sports
+ubisoft
+activision
+blizzard
+king.com
+zynga
+epic games
+supercell
+mihoyo
+adobe
+autodesk
+intuit
+square
+block,
+spotify
+amazon
+apple
+snapchat
+snap inc
+pinterest
+linkedin
+bytedance
+tiktok
+paramount
+peacock
+warner
+hulu
+amc
+draftkings
+fanduel
+betmgm
+openai
+anthropic
+x corp
+twitter
+yahoo
+yelp
+expedia
+airbnb
+uber
+lyft
+doordash
+instacart
+paypal
+venmo
+coinbase
+robinhood
+sofi
+chime
+github
+strava
+myfitnesspal
+under armour
+glority
+immedia
+universeapps
+voodoo
+miniclip
+niantic
+pinterest
+duo lingo
+beam
+facetune
+lightricks
+pixelcut
+photoroom
+prequel
+vsco
+life360
+riot games
+gameloft
+playrix
+playtika
+scopely
+jam city
+peak games
+moonactive
+zynga
+big fish
+wooga
+serbia
+emoji
+babbel
+masterclass
+coursera
+udemy
+chegg
+quizlet
+brainly
+photomath
+google
+norton
+mcafee
+avast
+avg
+kape
+expressvpn
+nordvpn
+surfshark
+instagram
+facebook
+whatsapp
+threads
+meta platforms
+cbs
+dream games
+microfun
+century games
+pandora
+siriusxm
+sirius
+nfl
+nba
+mlb
+audible
+warnermedia
+hbo
+discovery
+roku
+twitch
+discord
+telegram
+rakuten
+kakao
+naver
+line
+snap
+groupon
+ticketmaster
+stubhub
+venmo
+cash app
+squarespace
+wix
+shopify
+etsy
+poshmark
+mercari
+news break
+smartnews
+quora
+tumblr
+mastodon
+bluesky
+substack
+medium
+wattpad
+webtoon
+crunchyroll
+sony
+funimation
+viki
+tubi
+pluto
+plex
+sling
+fubo
+dazn
+espn
+fox
+nbc
+abc
+cnn
+nytimes
+new york times
+washington post
+wsj
+bloomberg
+reuters
+guardian
+bbc
+
+
+grindr
+dropbox
+garena
+gamechanger
+storymatrix
+shorttv
+lightspeed intelligence
+omnilojo
+univision

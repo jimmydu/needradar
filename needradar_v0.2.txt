@@ -126,6 +126,7 @@
 | CFPB 投诉数据库 | 公开 API + CSV 批量下载，免认证 | P0–P2 | **2026-08 起停止发布投诉叙述文本**，仅结构化字段 |
 | Freelancer.com | 官方 REST API（OAuth，需申请审批） | P3–P5 | 唯一能批量拉"项目+出价"的外包平台；条款要求缓存 24h 刷新、不得转售数据 |
 | App Store 评论 | Apple 官方 RSS/JSON 端点，免认证 | P0–P2 | 仅最近约 500 条/国家 |
+| App Store 榜单 | Apple RSS 榜（畅销/付费 × 品类）+ iTunes Lookup，免认证 | P5 | 小体量高收入 App 榜（2026-10-10 实现）：indie 启发式 + 大厂黑名单，收入按榜位粗分桶；applemarketingtools.com 从本机超时不可用 |
 | Google Play 评论 | 开源库 / 第三方托管 API（SerpApi 等） | P0–P2 | 灰色但实务被广泛接受，风险低 |
 | Indiegogo | 官方公共 API（Gamefound 平台），免认证 | P5 | 2025-10 迁移后有官方 API；无分类字段，软硬件靠文本规则；已实现（2026-10-10） |
 | Kickstarter | 无官方 API；Webrobots 免费月度全站 CSV 数据集（已实现）；直连爬虫已被 Cloudflare 拦死弃用 | P5 | 月度快照天然产生 pledged 增速信号（raw_json.pledged_delta）；2026-10-10 实测首月入库软件类 1091 条 |
