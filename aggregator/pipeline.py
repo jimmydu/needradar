@@ -229,7 +229,10 @@ def _fit_arbitrate(results, usage, batch=15):
 
 
 def _barrier_arbitrate(results, usage, batch=15):
-    """LLM re-scores ambiguous barrier values in place."""
+    """LLM re-scores ambiguous barrier values in place. Notes are tagged with
+    the model used (e.g. [kimi-k2.7-code-highspeed]) for audit."""
+    from extractor import llm as llm_mod
+    model = (llm_mod.resolve_config("light") or (None, "unknown", None))[1]
     for start in range(0, len(results), batch):
         chunk = results[start:start + batch]
         lines = []
@@ -254,8 +257,8 @@ def _barrier_arbitrate(results, usage, batch=15):
                 if 0 <= val <= 1:
                     r["barrier"] = round(val, 3)
                     r["barrier_method"] = "llm"
-                    if m.get("note"):
-                        r["barrier_note"] = m["note"]
+                    note = m.get("note")
+                    r["barrier_note"] = f"[{model}] {note}" if note else f"[{model}]"
         except Exception as e:
             log.warning("barrier arbitration batch failed: %s", e)
 
