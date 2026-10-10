@@ -154,8 +154,11 @@ python run_rank.py --top 20 --dry-run  # 不写库不调 LLM
 ## 每日自动跑批
 
 - `scripts/daily_run.sh`：采集 → 抽取（--limit 150）→ 出榜；单实例锁，日志 `logs/daily_YYYYMMDD.log`，脚本内显式 export Ollama 轻量档（cron 无 shell 环境）；ollama 未运行时记录日志并跳过 LLM（纯规则）
-- `scripts/send_report.sh`：最新榜单要点发飞书（cc-connect，session key 动态获取）
-- crontab（带 `# needradar` 注释标记）：`17 3 * * *` daily_run.sh、`3 7 * * *` send_report.sh
+- `scripts/send_report.sh`：最新榜单要点发飞书（cc-connect → 飞书 Open API chat_id 兜底，`scripts/feishu_send.py`）
+- **调度用 launchd（不要用 cron）**：macOS cron 在睡眠后不补跑。plist 在 `~/Library/LaunchAgents/com.needradar.{daily,report}.plist`（daily 3:17 / report 7:03，错过即唤醒补跑）。
+  - 管理命令：`launchctl list | grep needradar`、`launchctl kickstart gui/$(id -u)/com.needradar.daily`（手动触发）、`launchctl bootout gui/$(id -u)/com.needradar.daily`（卸载）
+  - launchd 标准输出：`logs/launchd_*.log`
+  - 备注：旧 crontab 条目因本机 cron daemon 无响应无法自动删除（备份在 /tmp/crontab_backup_launchd_migration.txt），请手动 `crontab -e` 清理；脚本有单实例锁，双跑无害
 
 ## 手动录入
 
