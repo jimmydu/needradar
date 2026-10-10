@@ -41,6 +41,7 @@ LLM config (OpenAI-compatible): `OPENAI_API_KEY` (required), `OPENAI_BASE_URL` (
 - **Scoring** (`aggregator/scoring.py`): WPS = 0.35·P-strength + 0.25·density (weekly-decayed count / candidate median) + 0.15·source-diversity + 0.10·amount-strength + 0.10·trend-persistence + 0.05·geo-HHI; confidence and accessibility per §9.3/§9.4.
 - **Software fit** (`aggregator/fit.py`): 0–1 rule score for indie-developer deliverability — physical-goods keywords and numeric PSC codes score ~0.1, SAM.gov PSC 'D' (IT services) 0.65, software keywords + consumer/SMB sources push up, licensed industries push down; ambiguous near-top clusters go to LLM arbitration (a few batched calls).
 - **Barrier** (`aggregator/barrier.py`): 0–1 score for post-entry difficulty (higher = easier) — 0.35·technical (engine/driver/realtime integration) + 0.30·compliance (HIPAA/finance licenses/legal/gov clearance) + 0.20·resource (capital/supply chain/data scale) + 0.15·channel (incumbent core features / platform policy gray zones, e.g. auto-cancel subscriptions); each hit carries a one-line Chinese note; ambiguous cases go to batched LLM arbitration.
+- **Hard filters** (`aggregator/filtering.py`): after scoring, clusters are removed (not just down-scored) when software_fit < 0.3 (hardware/offline), gov-only with fit ≤ 0.35 (US entity / contractor eligibility required), barrier < 0.4, the topic itself is a licensed activity (debt collection / lending / credit reporting), the demand is fully covered by an incumbent with no differentiation room (rule preselection + LLM verdict; complaints about incumbents are kept as opportunities), or fewer than 2 evidence signals. Filtered rows keep a `filtered_reason` in the `clusters` table and are listed in the report's audit appendix for manual revival.
 - Final = WPS × confidence × accessibility × software_fit × barrier.
 - Results persist to the `clusters` table (idempotent per `run_date`) and a Markdown report is exported to `reports/topN_YYYYMMDD.md` (main board + pure-WPS Top 20, per-item entry-point suggestions, verbatim evidence quotes).
 
@@ -126,6 +127,7 @@ LLM 配置（OpenAI 兼容接口）：`OPENAI_API_KEY`（必需）、`OPENAI_BAS
 - **代码可行性**（`aggregator/fit.py`）：0–1 规则分，衡量独立开发者可否纯软件交付——实物/物料关键词与数字 PSC 码约 0.1，SAM.gov PSC 以 D 开头（IT 服务）0.65，软件关键词 + 消费/SMB 来源加分，牌照行业减分；顶部分数模糊（0.3–0.65）的簇交 LLM 批量裁决。
 - **门槛高度**（`aggregator/barrier.py`）：0–1 分（越高=门槛越低），衡量切入后交付难度——0.35·技术（引擎/驱动/实时底层集成）+ 0.30·合规（HIPAA/金融牌照/法律/政府资质）+ 0.20·资源（重资本/供应链/数据规模）+ 0.15·渠道（巨头核心功能/平台政策灰色地带，如自动取消订阅）；每条附一句门槛说明；边界簇 LLM 批量裁决。
 - 最终分 = WPS × 置信度 × 可进入性 × 代码可行性 × 门槛高度。
+- **硬过滤**（`aggregator/filtering.py`）：打分后出榜前剔除——software_fit<0.3（硬件/线下）、纯政府采购且 fit≤0.35（需美国实体/承包商资质）、barrier<0.4（门槛过高）、主题本质为持证经营（催收/放贷/征信）、强竞品垄断无差异化空间（规则预选 + LLM 裁决；抱怨巨头涨价/难用的主题保留为机会）、证据<2 条孤信号。被过滤簇在 `clusters` 表保留 `filtered_reason`，报告附「已过滤清单」供人工复核复活。
 - 结果落 `clusters` 表（按 `run_date` 幂等重跑），导出 `reports/top50_YYYYMMDD.md`（主榜 Top 50 + 纯 WPS 榜 Top 20，每条含切入点建议与原文引用）。
 
 ```bash

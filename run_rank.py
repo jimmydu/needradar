@@ -7,6 +7,7 @@ import argparse
 import json
 import logging
 import os
+import re
 from datetime import date
 
 from aggregator.pipeline import run
@@ -17,7 +18,13 @@ def fmt_amount(a):
     return f"${a:,.0f}" if a else "无金额线索"
 
 
-def render_report(results, usage, top, window_desc, run_date):
+def render_report(survivors, filtered, usage, weeks, run_date):
+    from collections import Counter
+    reason_stats = Counter()
+    for r in filtered:
+        key = re.split(r"[：（]", r["filtered_reason"])[0]
+        reason_stats[key] += 1
+
     def section(items, title):
         lines = [f"## {title}", ""]
         for rank, r in enumerate(items, 1):
@@ -47,19 +54,27 @@ def render_report(results, usage, top, window_desc, run_date):
             lines.append("")
         return lines
 
-    by_wps = sorted(results, key=lambda r: -r["wps"])[:20]
+    n = len(survivors)
+    by_wps = sorted(survivors, key=lambda r: -r["wps"])[:20]
     lines = [
-        f"# NeedRadar Top {top} 需求榜单（{run_date}）",
+        f"# NeedRadar Top {n} 需求榜单（{run_date}）",
         "",
-        f"窗口：{window_desc}｜主榜按 最终分 = WPS × 置信度 × 可进入性 × 代码可行性 × 门槛高度 排序；"
-        "附纯 WPS 榜 Top 20（§9.5）",
+        f"窗口：过去 {weeks} 周滚动｜主榜为硬过滤后存活主题，按 最终分 = WPS × 置信度 × 可进入性 × "
+        "代码可行性 × 门槛高度 排序；附纯 WPS 榜 Top 20（§9.5）与已过滤清单",
+        "",
+        f"过滤统计：候选 {n + len(filtered)} 个 → 剔除 {len(filtered)} 个 → 存活 {n} 个。"
+        + "；".join(f"{k} {v}" for k, v in reason_stats.most_common()),
         "",
     ]
-    lines += section(results[:top], f"主榜 Top {top}（最终分）")
-    lines += section(by_wps, "纯 WPS 榜 Top 20")
+    lines += section(survivors, f"主榜 Top {n}（最终分）")
+    lines += section(by_wps, "纯 WPS 榜 Top 20（存活主题内）")
+    lines += ["## 已过滤清单（可人工复核复活）", ""]
+    for r in filtered:
+        lines.append(f"- {r['summary'][:80]}｜{r['filtered_reason']}")
     lines += [
+        "",
         "---",
-        f"LLM 调用 {usage['calls']} 次（合并裁决 + 代码可行性裁决 + 切入点润色），"
+        f"LLM 调用 {usage['calls']} 次（合并/可行性/门槛/垄断裁决 + 切入点润色），"
         f"prompt {usage['prompt_tokens']} tokens，completion {usage['completion_tokens']} tokens。",
         "注：本榜单为公式自动输出，按 §11 流程需人工审核后定稿。",
     ]
@@ -76,22 +91,22 @@ def main():
     args = p.parse_args()
 
     session = get_session()
-    results, usage = run(session, weeks=args.weeks,
-                         use_llm=not (args.no_llm or args.dry_run),
-                         dry_run=args.dry_run)
+    survivors, filtered, usage = run(session, weeks=args.weeks,
+                                     use_llm=not (args.no_llm or args.dry_run),
+                                     dry_run=args.dry_run)
 
-    print(f"\n===== NeedRadar Top {args.top}（最终分排序） =====")
-    for rank, r in enumerate(results[:args.top], 1):
+    print(f"\n===== NeedRadar 存活主题 {len(survivors)} 个（最终分排序） =====")
+    for rank, r in enumerate(survivors[:args.top], 1):
         st = r["stats"]
         print(f"{rank:2d}. [{r['final_score']:.3f}] WPS={r['wps']:.3f} "
               f"conf={r['confidence']:.2f} acc={r['accessibility']:.2f} "
               f"fit={r['software_fit']:.2f}({r['fit_method']}) "
               f"bar={r['barrier']:.2f}({r['barrier_method']}) "
               f"P{st['p_max']} n={st['n']} src={st['n_sources']} | {r['summary'][:60]}")
+    print(f"（过滤：候选 {len(survivors) + len(filtered)} → 存活 {len(survivors)}）")
 
     run_date = date.today().isoformat()
-    report = render_report(results, usage, args.top,
-                           f"过去 {args.weeks} 周滚动", run_date)
+    report = render_report(survivors, filtered, usage, args.weeks, run_date)
     if not args.dry_run:
         os.makedirs("reports", exist_ok=True)
         path = f"reports/top{args.top}_{run_date.replace('-', '')}.md"

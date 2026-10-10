@@ -11,7 +11,7 @@ from datetime import date, datetime, timedelta
 import requests
 
 from aggregator import barrier as barrier_mod
-from aggregator import fit, scoring
+from aggregator import filtering, fit, scoring
 from aggregator.clustering import cluster_signals, cluster_tokens, find_merge_candidates
 from storage import Cluster, Extraction, RawSignal
 
@@ -172,6 +172,12 @@ def _fit_arbitrate(results, usage, batch=15):
                 except (TypeError, ValueError):
                     continue
                 if 0 <= val <= 1:
+                    # guardrail: LLM may not raise the fit of gov non-IT clusters
+                    # (VPL/prosthetics-type hardware keeps its rule score)
+                    if r["fit_method"] in ("rule_gov_svc", "rule") \
+                            and set(r["stats"]["sources"]) <= {"sam_gov", "usaspending"} \
+                            and val > r["software_fit"]:
+                        continue
                     r["software_fit"] = round(val, 3)
                     r["fit_method"] = "llm"
                     r["fit_note"] = m.get("note")
@@ -315,12 +321,18 @@ def run(session, weeks=4, use_llm=True, dry_run=False, run_date=None):
             r["final_score"] = round(r["wps"] * r["confidence"] * r["accessibility"]
                                      * r["software_fit"] * r["barrier"], 4)
 
-    # entry points: rule template for all, LLM polish for the visible top
-    results.sort(key=lambda r: -r["final_score"])
-    for r in results:
+    # hard filters: after scoring, before ranking
+    survivors, filtered = filtering.apply_filters(
+        results, usage, use_llm and _llm_configured(), _chat_json)
+    log.info("filters: %d candidates -> %d survivors, %d filtered",
+             len(results), len(survivors), len(filtered))
+
+    # entry points: rule template for survivors, LLM polish for the visible top
+    survivors.sort(key=lambda r: -r["final_score"])
+    for r in survivors:
         r["entry_point"] = _rule_entry_point(r)
     if use_llm and _llm_configured():
-        _llm_entry_points(results[:50], usage)
+        _llm_entry_points(survivors[:50], usage)
 
     if not dry_run:
         session.query(Cluster).filter(Cluster.run_date == run_date).delete()
@@ -342,11 +354,12 @@ def run(session, weeks=4, use_llm=True, dry_run=False, run_date=None):
                 confidence=r["confidence"], accessibility=r["accessibility"],
                 final_score=r["final_score"],
                 software_fit=r["software_fit"], fit_method=r["fit_method"],
-                entry_point=r["entry_point"],
+                entry_point=r.get("entry_point"),
                 barrier=r["barrier"], barrier_note=r["barrier_note"],
+                filtered_reason=r["filtered_reason"],
                 window_start=window_start, window_end=window_end,
             ))
         session.commit()
         log.info("persisted %d candidate clusters (run_date=%s)", len(results), run_date)
 
-    return results, usage
+    return survivors, filtered, usage
