@@ -41,7 +41,7 @@ LLM config (OpenAI-compatible): `OPENAI_API_KEY` (required), `OPENAI_BASE_URL` (
 - **Scoring** (`aggregator/scoring.py`): WPS = 0.35·P-strength + 0.25·density (weekly-decayed count / candidate median) + 0.15·source-diversity + 0.10·amount-strength + 0.10·trend-persistence + 0.05·geo-HHI; confidence and accessibility per §9.3/§9.4.
 - **Software fit** (`aggregator/fit.py`): 0–1 rule score for indie-developer deliverability — physical-goods keywords and numeric PSC codes score ~0.1, SAM.gov PSC 'D' (IT services) 0.65, software keywords + consumer/SMB sources push up, licensed industries push down; ambiguous near-top clusters go to LLM arbitration (a few batched calls).
 - **Barrier** (`aggregator/barrier.py`): 0–1 score for post-entry difficulty (higher = easier) — 0.35·technical (engine/driver/realtime integration) + 0.30·compliance (HIPAA/finance licenses/legal/gov clearance; **pure gov-source themes always get compliance 0.2, channel ≤0.3 and a 0.35 total cap** — government contracting needs a US entity / contractor registration) + 0.20·resource (capital/supply chain/data scale) + 0.15·channel (incumbent core features / platform policy gray zones, e.g. auto-cancel subscriptions); each hit carries a one-line Chinese note; ambiguous cases go to batched LLM arbitration.
-- **LLM tiers**: arbitration calls (merge/fit/barrier/monopoly) use a cheap/local tier when `NEEDRADAR_LLM_LIGHT` + `NEEDRADAR_LLM_LIGHT_MODEL` are set (e.g. Ollama at `http://localhost:11434/v1` with `gemma4:12b`, free); extraction and entry-point writing stay on the heavy tier (`OPENAI_*`). Tested parity: gemma4:12b arbitration quality matched kimi; extraction JSON compliance 6/6.
+- **LLM tiers**: unified in `extractor/llm.py` `resolve_config(tier)` with mutual fallback — light tier (`NEEDRADAR_LLM_LIGHT` + `NEEDRADAR_LLM_LIGHT_MODEL`, e.g. Ollama `http://localhost:11434/v1` + `gemma4:12b`, free) is preferred for aggregation arbitrations; heavy tier (`OPENAI_*`, e.g. kimi) is preferred for extraction and falls back to light when unset. **Current default: everything on local Gemma** — set only the light tier; to switch extraction back to kimi, `source ~/.openai/model.kimi`. Tested on gemma4:12b: extraction JSON compliance 19/19, verbatim evidence 100% (code-enforced), field fill 64% (on par with kimi); arbitration quality comparable.
 - **Hard filters** (`aggregator/filtering.py`): after scoring, clusters are removed (not just down-scored) when software_fit < 0.3 (hardware/offline), gov-only with fit ≤ 0.35 (US entity / contractor eligibility required), barrier < 0.4, the topic itself is a licensed activity (debt collection / lending / credit reporting), the demand is fully covered by an incumbent with no differentiation room (rule preselection + LLM verdict; complaints about incumbents are kept as opportunities), or fewer than 2 evidence signals. Filtered rows keep a `filtered_reason` in the `clusters` table and are listed in the report's audit appendix for manual revival.
 - Final = WPS × confidence × accessibility × software_fit × barrier.
 - Results persist to the `clusters` table (idempotent per `run_date`) and a Markdown report is exported to `reports/topN_YYYYMMDD.md` (main board + pure-WPS Top 20, per-item entry-point suggestions, verbatim evidence quotes).
@@ -121,9 +121,12 @@ LLM 配置（OpenAI 兼容接口）：`OPENAI_API_KEY`（必需）、`OPENAI_BAS
 
 ### LLM 双档（轻量本地 + 重量云端）
 
-- **重量档**（`OPENAI_*`，如 kimi-k2.7-code-highspeed）：抽取层语义字段（evidence 逐字引用契约要求高）、切入点文案润色。
-- **轻量档**（`NEEDRADAR_LLM_LIGHT` + `NEEDRADAR_LLM_LIGHT_MODEL`）：聚合层裁决类调用（合并/可行性/门槛/垄断，短文本判断）。例：`NEEDRADAR_LLM_LIGHT=http://localhost:11434/v1 NEEDRADAR_LLM_LIGHT_MODEL=gemma4:12b`（本机 Ollama，免费）。未配置时裁决类回落重量档；两档都未配置则跳过裁决、纯规则跑通。
-- 实测（2026-10，gemma4:12b vs kimi）：裁决类质量相当（合并裁决 29/30 与 kimi 一致，门槛/可行性判断合理）；抽取层 6 条样本 JSON 合规 6/6、字段填充 15/24（kimi 16/24）、evidence 经代码强制校验 100% 逐字——抽取也可用轻量档跑批量，但默认仍走重量档。
+统一配置入口：`extractor/llm.py` 的 `resolve_config(tier)`，两档互相回落。
+
+- **轻量档**（`NEEDRADAR_LLM_LIGHT` + `NEEDRADAR_LLM_LIGHT_MODEL`，如本机 Ollama `http://localhost:11434/v1` + `gemma4:12b`，免费）：聚合层裁决类调用优先走这里。
+- **重量档**（`OPENAI_API_KEY`/`OPENAI_BASE_URL`/`OPENAI_MODEL`，如 kimi）：抽取层优先走这里；未配重量档时自动回落轻量档。
+- **当前默认：全部任务走本地 Gemma**——只设 `NEEDRADAR_LLM_LIGHT` 即可全局生效；切回 Kimi：`source ~/.openai/model.kimi`（重量档配好后抽取层自动用回 Kimi）。
+- 实测（gemma4:12b，19 条抽取）：JSON 合规 19/19、evidence 逐字 100%（代码强制校验）、字段填充 64%（与 kimi 持平）、单条 25-30s；聚合裁决与 kimi 质量相当。
 
 ## 聚合与 WPS 排序
 

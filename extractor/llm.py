@@ -23,6 +23,33 @@ PRICES = {
     "gpt-4o": (2.50, 10.00),
 }
 
+DEFAULT_LIGHT_MODEL = "gemma4:12b"
+
+
+def resolve_config(tier="heavy"):
+    """Unified two-tier LLM config.
+
+    heavy tier: OPENAI_BASE_URL/OPENAI_MODEL/OPENAI_API_KEY (e.g. kimi via
+    ~/.openai/model.kimi). light tier: NEEDRADAR_LLM_LIGHT (base URL) +
+    NEEDRADAR_LLM_LIGHT_MODEL (e.g. Ollama http://localhost:11434/v1 +
+    gemma4:12b, free). Each tier falls back to the other; returns
+    (base_url, model, api_key) or None when nothing is configured.
+    """
+    light_base = os.environ.get("NEEDRADAR_LLM_LIGHT", "").rstrip("/")
+    light = (light_base, os.environ.get("NEEDRADAR_LLM_LIGHT_MODEL", DEFAULT_LIGHT_MODEL),
+             os.environ.get("NEEDRADAR_LLM_LIGHT_KEY", "ollama")) if light_base else None
+    heavy = (os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1"),
+             os.environ.get("OPENAI_MODEL", "gpt-4o-mini"),
+             os.environ.get("OPENAI_API_KEY")) if os.environ.get("OPENAI_API_KEY") else None
+    if tier == "light":
+        return light or heavy
+    return heavy or light
+
+
+def default_temperature(model):
+    # kimi-k2.x rejects temperature != 1; gemma defaults to 1 as well
+    return 1.0 if model.startswith(("kimi", "gemma")) else 0.0
+
 SYSTEM_PROMPT = """你是需求信号分析器。从用户给出的英文/中文文本中抽取语义字段，输出 JSON。
 要求：
 - 每个非空字段必须给出 evidence：原文中的逐字引用片段（英文保持原文，不要翻译）。
@@ -61,18 +88,16 @@ def extract_semantics(signal, timeout=None):
     fields_dict values are plain strings ("" when not found).
     Raises LLMNotConfigured when no API key; requests exceptions on HTTP errors.
     """
-    if not API_KEY:
-        raise LLMNotConfigured("OPENAI_API_KEY not set")
+    cfg = resolve_config("heavy")
+    if not cfg:
+        raise LLMNotConfigured("no LLM tier configured (set OPENAI_API_KEY or NEEDRADAR_LLM_LIGHT)")
+    base_url, model, api_key = cfg
 
     timeout = timeout or int(os.environ.get("OPENAI_TIMEOUT", "180"))
     description = (signal.description or "")[:4000]
-    # kimi-k2.x models reject temperature != 1; allow env override otherwise
-    temperature = float(os.environ.get(
-        "OPENAI_TEMPERATURE",
-        "1" if MODEL.startswith("kimi") else "0",
-    ))
+    temperature = float(os.environ.get("OPENAI_TEMPERATURE", str(default_temperature(model))))
     payload = {
-        "model": MODEL,
+        "model": model,
         "messages": [
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": USER_TEMPLATE.format(
@@ -88,8 +113,8 @@ def extract_semantics(signal, timeout=None):
     for attempt in range(3):
         try:
             resp = requests.post(
-                f"{BASE_URL}/chat/completions",
-                headers={"Authorization": f"Bearer {API_KEY}"},
+                f"{base_url}/chat/completions",
+                headers={"Authorization": f"Bearer {api_key}"},
                 json=payload,
                 timeout=timeout,
             )
@@ -121,5 +146,5 @@ def extract_semantics(signal, timeout=None):
         fields[key] = value
         evidence[key] = ev
 
-    return (fields, evidence, MODEL,
+    return (fields, evidence, model,
             usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0), raw)

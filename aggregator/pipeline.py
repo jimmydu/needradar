@@ -23,8 +23,9 @@ MERGE_SYSTEM = """你是需求主题归并裁判。给定若干对候选主题�
 
 
 def _llm_configured():
-    """Heavy tier (kimi/OpenAI) configured."""
-    return bool(os.environ.get("OPENAI_API_KEY"))
+    """Any usable LLM endpoint configured (heavy or light, either way)."""
+    from extractor import llm as llm_mod
+    return llm_mod.resolve_config("heavy") is not None
 
 
 def _light_configured():
@@ -32,27 +33,21 @@ def _light_configured():
 
 
 def _arbitration_ready():
-    return _light_configured() or _llm_configured()
+    return _llm_configured()
 
 
 def _chat_json(system, user, timeout=None, tier="light"):
-    """Generic chat->JSON call.
-
-    tier="light" (aggregation arbitrations: merge/fit/barrier/monopoly) uses
-    the local model when NEEDRADAR_LLM_LIGHT (base URL) and
-    NEEDRADAR_LLM_LIGHT_MODEL are set — e.g. Ollama's OpenAI-compatible
-    endpoint http://localhost:11434/v1 with gemma4:12b. Otherwise falls back
-    to the heavy tier (OPENAI_* env, kimi), same conventions as extractor.llm.
-    """
-    base = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1")
-    model = os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
-    api_key = os.environ.get("OPENAI_API_KEY")
-    if tier == "light" and os.environ.get("NEEDRADAR_LLM_LIGHT"):
-        base = os.environ["NEEDRADAR_LLM_LIGHT"].rstrip("/")
-        model = os.environ.get("NEEDRADAR_LLM_LIGHT_MODEL", "gemma4:12b")
-        api_key = os.environ.get("NEEDRADAR_LLM_LIGHT_KEY", "ollama")
-    temperature = float(os.environ.get(
-        "OPENAI_TEMPERATURE", "1" if model.startswith(("kimi", "gemma")) else "0"))
+    """Generic chat->JSON call on the resolved two-tier config
+    (extractor.llm.resolve_config): light tier = NEEDRADAR_LLM_LIGHT
+    (e.g. Ollama gemma4:12b, free) falling back to heavy OPENAI_* (kimi),
+    and vice versa."""
+    from extractor import llm as llm_mod
+    cfg = llm_mod.resolve_config(tier)
+    if not cfg:
+        raise llm_mod.LLMNotConfigured("no LLM tier configured")
+    base, model, api_key = cfg
+    temperature = float(os.environ.get("OPENAI_TEMPERATURE",
+                                       str(llm_mod.default_temperature(model))))
     timeout = timeout or int(os.environ.get("OPENAI_TIMEOUT", "180"))
     resp = requests.post(
         f"{base}/chat/completions",

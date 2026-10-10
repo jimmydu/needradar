@@ -340,6 +340,11 @@ WPS = 0.35 * 信号等级强度
 - 前端：Next.js 或 Streamlit；
 - 监控：Grafana + 采集失败告警。
 
+**LLM 配置（2026-10-10 更新，实现见 extractor/llm.py `resolve_config`）**
+- 双档：重量档 `OPENAI_API_KEY`/`OPENAI_BASE_URL`/`OPENAI_MODEL`（如 kimi-k2.7-code-highspeed，`source ~/.openai/model.kimi`）；轻量档 `NEEDRADAR_LLM_LIGHT`/`NEEDRADAR_LLM_LIGHT_MODEL`（本机 Ollama，`http://localhost:11434/v1` + `gemma4:12b`，免费）。两档互相回落，都未配置则纯规则跑通。
+- **当前默认：全部 LLM 任务走本地 Gemma**（只配轻量档即可）；切回 Kimi：source ~/.openai/model.kimi（重量档优先于轻量档用于抽取层；聚合裁决类始终优先轻量档）。
+- 实测（gemma4:12b，19 条抽取样本）：JSON 合规 19/19，evidence 逐字校验 100%（代码强制），字段填充率 64%（与 kimi 的 64% 持平），单条约 25-30s；聚合裁决质量与 kimi 相当。
+
 ---
 
 ## 15. MVP 范围

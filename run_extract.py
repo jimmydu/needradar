@@ -36,7 +36,8 @@ def main():
     for k, v in stats.items():
         print(f"{k:22s} {v}")
     if not args.no_llm and not args.dry_run:
-        print(f"{'model':22s} {llm.MODEL}")
+        cfg = llm.resolve_config("heavy")
+        print(f"{'model':22s} {cfg[1] if cfg else '(none)'}")
 
 
 if __name__ == "__main__":
