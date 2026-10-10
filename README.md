@@ -145,6 +145,12 @@ python run_rank.py                     # Top 50，4 周窗口
 python run_rank.py --top 20 --dry-run  # 不写库不调 LLM
 ```
 
+## 每日自动跑批
+
+- `scripts/daily_run.sh`：采集 → 抽取（--limit 150）→ 出榜；单实例锁，日志 `logs/daily_YYYYMMDD.log`，脚本内显式 export Ollama 轻量档（cron 无 shell 环境）；ollama 未运行时记录日志并跳过 LLM（纯规则）
+- `scripts/send_report.sh`：最新榜单要点发飞书（cc-connect，session key 动态获取）
+- crontab（带 `# needradar` 注释标记）：`17 3 * * *` daily_run.sh、`3 7 * * *` send_report.sh
+
 ## 手动录入
 
 无合法 API 的高价值源（如 Kickstarter most-funded 榜单）人工浏览后手动录入，入 `raw_signals` 表（source='manual'），与自动采集走同一去重和后续流程。
