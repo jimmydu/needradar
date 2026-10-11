@@ -25,6 +25,8 @@ def render_report(survivors, filtered, excluded_big, usage, weeks, run_date):
         key = re.split(r"[：（]", r["filtered_reason"])[0]
         reason_stats[key] += 1
 
+    max_final = max((r["final_score"] for r in survivors), default=0) or 1
+
     def section(items, title):
         lines = [f"## {title}", ""]
         for rank, r in enumerate(items, 1):
@@ -32,6 +34,7 @@ def render_report(survivors, filtered, excluded_big, usage, weeks, run_date):
             fit = f"- 代码可行性：**{r['software_fit']}**（{r['fit_method']}）"
             if r.get("fit_note"):
                 fit += f" — {r['fit_note']}"
+            norm = round(r["final_score"] / max_final * 100, 1)
             lines += [
                 f"### {rank}. {r['summary']}",
                 "",
@@ -42,7 +45,8 @@ def render_report(survivors, filtered, excluded_big, usage, weeks, run_date):
                 fit,
                 f"- 门槛高度：**{r['barrier']}**（{r['barrier_method']}）— {r['barrier_note']}",
                 f"- 付费对象：**{r['payer_quality']}** — {r['payer_note']}",
-                f"- **最终分：{r['final_score']}**（= WPS × 置信度 × 可进入性 × 代码可行性 × 门槛高度 × 付费对象质量）",
+                f"- **最终分：{norm}**（榜首=100 归一化；原始分 {r['final_score']}，"
+                "= WPS × 置信度 × 可进入性 × 代码可行性 × 门槛高度 × 付费对象质量）",
                 f"- 切入点：{r['entry_point']}",
                 "- 竞品：" + ("、".join(r["competitors"]) if r.get("competitors") else "待补充（LLM 不可用或未识别）"),
                 f"- 证据：{st['n']} 条信号，来源 {json.dumps(dict(st['sources']), ensure_ascii=False)}，"
@@ -123,10 +127,11 @@ def main():
         use_llm=not (args.no_llm or args.dry_run),
         dry_run=args.dry_run)
 
-    print(f"\n===== NeedRadar 存活主题 {len(survivors)} 个（最终分排序） =====")
+    print(f"\n===== NeedRadar 存活主题 {len(survivors)} 个（最终分排序，榜首=100） =====")
+    top_final = max((r["final_score"] for r in survivors), default=0) or 1
     for rank, r in enumerate(survivors[:args.top], 1):
         st = r["stats"]
-        print(f"{rank:2d}. [{r['final_score']:.3f}] WPS={r['wps']:.3f} "
+        print(f"{rank:2d}. [{r['final_score'] / top_final * 100:5.1f}] WPS={r['wps']:.3f} "
               f"conf={r['confidence']:.2f} acc={r['accessibility']:.2f} "
               f"fit={r['software_fit']:.2f}({r['fit_method']}) "
               f"bar={r['barrier']:.2f}({r['barrier_method']}) "
