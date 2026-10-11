@@ -22,12 +22,25 @@ LLM_POLICY = {
     "reddit": "always",
     "freelancer": "always",
     "manual": "always",
+    # 行业研究/数据平台方向的新源：规则足够（金额/票数/热度），LLM 只给
+    # stackexchange（问题正文有真痛点文本）；其余一律规则
+    "stackexchange": "always",
+    "freelancer_research": "never",
+    "google_trends": "never",
+    "kaggle": "never",
+    "hf_datasets": "never",
     # 众筹/新闻: 规则已能定级（P5 金额、触发事件标签），标题/简介直接进聚类，
     # LLM 语义抽取对榜单边际收益低（e4b 每条 ~18s，全量 Kickstarter 需 5+ 小时）
     "kickstarter": "never",
     "indiegogo": "never",
     "news": "never",
     "youtube": "never",
+    # 成功样本/JD：结构化字段自解释，不进 LLM
+    "appstore_indie": "never",
+    "gplay_indie": "never",
+    "shopify_apps": "never",
+    "betalist": "never",
+    "remoteok": "never", "remotive": "never", "weworkremotely": "never",
 }
 
 

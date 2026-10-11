@@ -45,6 +45,9 @@ cd "$PROJECT" || exit 1
         SKIP="$SKIP,sam_gov,usaspending,cfpb"
         echo "weekday $DOW: 低频源（sam_gov/usaspending/cfpb）跳过"
     fi
+    # 行业研究/数据平台新源节奏：google_trends 内置每日一次状态文件（同日秒退），
+    # stackexchange 增量（配额 300/天，实际 1-3 次/天），kaggle 无 key 自动跳过，
+    # hf_datasets 每日快照去重；data.gov CKAN API 已失效（2026-10-11 实测 404），未接
 
     # SAM.gov 配额 ~10次/天：run_daily 默认窗口（昨天）= 4 请求，每周一次安全
     echo "--- collect ---"

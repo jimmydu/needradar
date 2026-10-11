@@ -96,6 +96,12 @@ def rule_p_level(signal):
         return 4  # shopify-ecosystem tool with proven merchant spend
     if source in ("remoteok", "remotive", "weworkremotely"):
         return 3  # employer demand signal (remote hiring)
+    if source == "freelancer_research":
+        return 4 if signal.amount else 3  # paying humans to assemble data by hand
+    if source == "stackexchange":
+        return 3 if (signal.rating or 0) >= 3 else None  # votes as demand strength
+    if source in ("hf_datasets", "kaggle"):
+        return 3  # dataset adoption = data demand proxy
     if source == "betalist":
         return 3  # launch-stage indie product
     if source == "manual":

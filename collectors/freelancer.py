@@ -70,6 +70,13 @@ def _amount(project):
     return None
 
 
+# 行业研究/数据汇编类查询（最强信号：花钱雇人手工汇编数据 = 数据平台买单证据）
+RESEARCH_QUERIES = [
+    "data collection", "lead list", "market research", "web scraping",
+    "data entry research", "industry report",
+]
+
+
 def _signal_type(project):
     status = (project.get("status") or "").lower()
     if status in ("active", "open"):
@@ -77,6 +84,53 @@ def _signal_type(project):
     if status in ("complete", "closed") and (project.get("bids") or 0) > 0:
         return "已完成外包"
     return "外包发布"
+
+
+def _research_search(date_from, date_to, session, headers, stats, start_ts, now):
+    """Query-based search for research/data-assembly jobs. Untested without a
+    token (2026-10-11: no key configured yet)."""
+    from storage import upsert_signals
+    for q in RESEARCH_QUERIES:
+        for page in range(3):
+            result = _get("/projects/0.1/projects", headers, {
+                "query": q, "limit": 100, "offset": page * 100,
+                "sort_field": "time_submitted", "reverse_sort": "true",
+                "compact": "false", "full_description": "true",
+            })
+            stats["requests"] += 1
+            if result is None:
+                stats["failed"] += 1
+                break
+            projects = result.get("projects") or []
+            if not projects:
+                break
+            records = []
+            for pr in projects:
+                submitted = pr.get("time_submitted")
+                if submitted and submitted < start_ts:
+                    continue
+                records.append({
+                    "source": "freelancer_research",
+                    "source_id": str(pr.get("id")),
+                    "signal_type": "数据汇编外包",
+                    "title": pr.get("title"),
+                    "description": (pr.get("description") or pr.get("preview_description") or "")[:5000],
+                    "amount": _amount(pr),
+                    "naics": None, "state": None,
+                    "posted_at": datetime.utcfromtimestamp(submitted) if submitted else None,
+                    "fetched_at": now,
+                    "url": pr.get("seo_url") and f"https://www.freelancer.com/projects/{pr['seo_url']}" or None,
+                    "rating": None,
+                    "raw_json": json.dumps({"query": q, "budget": pr.get("budget"),
+                                            "bids": pr.get("bids"),
+                                            "project": pr}, ensure_ascii=False),
+                })
+            ins, skip = upsert_signals(session, records)
+            stats["inserted"] += ins
+            stats["skipped"] += skip
+            if len(projects) < 100:
+                break
+            time.sleep(0.5)
 
 
 def collect(date_from, date_to, session):
@@ -147,6 +201,9 @@ def collect(date_from, date_to, session):
         if seen_older or len(projects) < PAGE_SIZE:
             break
         time.sleep(0.5)
+
+    # research/data-assembly query search (tier-1 signal for data-platform demand)
+    _research_search(date_from, date_to, session, headers, stats, start_ts, now)
 
     return stats
 

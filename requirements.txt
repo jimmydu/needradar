@@ -1,2 +1,4 @@
 requests>=2.31
 SQLAlchemy>=2.0
+pytrends>=4.9
+kaggle>=1.7

@@ -108,7 +108,8 @@ def canonical_topic(signal, extraction, raw):
     Crowdfunding sources are products, not pain posts — excluded likewise."""
     if signal.source in ("sam_gov", "usaspending", "news", "kickstarter", "indiegogo",
                          "appstore_indie", "betalist", "gplay_indie",
-                         "shopify_apps",
+                         "shopify_apps", "freelancer_research", "stackexchange",
+                         "google_trends", "kaggle", "hf_datasets",
                          "remoteok", "remotive", "weworkremotely"):
         return None
     text = " ".join(filter(None, [
@@ -165,6 +166,16 @@ def residual_bucket_key(signal, extraction, raw):
         return f"indie_gp:{raw.get('genre') or 'misc'}"
     if src == "shopify_apps":
         return f"indie_shopify:{raw.get('category') or 'misc'}"
+    if src == "freelancer_research":
+        return f"research:{(raw.get('query') or 'misc')[:30]}"
+    if src == "stackexchange":
+        tags = raw.get("tags") or []
+        return f"opendata:{tags[0] if tags else 'misc'}"
+    if src == "google_trends":
+        combo = (raw.get("combo") or "").split()
+        return f"trends:{combo[-1] if combo else 'misc'}"
+    if src in ("hf_datasets", "kaggle"):
+        return f"datasets:{src}"
     if src in ("remoteok", "remotive", "weworkremotely"):
         return f"remotejob:{(raw.get('category') or raw.get('company') or 'misc')[:40]}"
     app = raw.get("app_name") or raw.get("app_id")

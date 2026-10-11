@@ -17,6 +17,11 @@ This repository contains the data collection layer. All collectors use **officia
 | Indiegogo | Official public API (no auth, Gamefound platform) | Active crowdfunding campaigns (pledged/goal/backers) |
 | Kickstarter | Webrobots monthly full-site CSV snapshots (~100MB zip, free); direct scraping is Cloudflare-blocked | Most-funded/newest tech campaigns |
 | YouTube | Official Data API v3 (`YOUTUBE_API_KEY`, 10k units/day) | Pain-keyword short videos + top comments |
+| Stack Exchange OpenData | Official API (no key, 300/day) | Dataset-request questions, votes = demand strength |
+| Google Trends | pytrends (unofficial, daily-capped) | Rising queries around data/research verticals |
+| Kaggle | Official API (`~/.kaggle/kaggle.json`) | Dataset search popularity |
+| Hugging Face Datasets | Public Hub API (no key) | Trending/most-downloaded datasets (AI circle) |
+| Freelancer research queries | Official API (existing key) | Paid manual data assembly = data-platform demand |
 | Google News | RSS keyword search (no auth) | Trigger events: policy changes, price hikes, shortages, class-action settlements, shutdowns |
 | App Store charts | Apple RSS (top-grossing + top-paid × key genres) + iTunes Lookup enrichment | Indie high-revenue apps (`run_indie_report.py`, `indie_blacklist.txt`) |
 
@@ -75,6 +80,7 @@ uv venv && uv pip install -r requirements.txt   # 或 python3 -m venv .venv && p
 - `APPSTORE_APPS_FILE`：默认 `./appstore_apps.txt`（每行 `app_id  # 注释`）。每日评论采集目标 = 该清单 + 当日畅销榜 top 100 合并去重。
 - `REDDIT_SUBS_FILE`：默认 `./reddit_subs.txt`（每行一个 subreddit 名）。
 - `YOUTUBE_API_KEY`：YouTube Data API v3 key。申请：Google Cloud Console → 建项目 → 启用 "YouTube Data API v3" → 凭据 → 创建 API 密钥。免费配额 10,000 单位/天，本采集器每日约用 ~700 单位（6 次 search×100 + 5 次 commentThreads×1）。未配置自动跳过。
+- Kaggle：API token 从 https://www.kaggle.com/settings → Create New API Token 下载 `kaggle.json` 放 `~/.kaggle/kaggle.json`（勿提交仓库）。未配置自动跳过。
 - `FREELANCER_API_KEY_FILE`：默认 `./freelancer.api.key`（纯文本 token，已在 .gitignore）。也可用 `FREELANCER_ACCESS_TOKEN` 环境变量。
 
 ### Freelancer.com 凭证

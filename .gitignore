@@ -10,3 +10,5 @@ __pycache__/
 kickstarter_state.json
 .feishu_chat_id
 node_modules/
+trends_state.json
+stackexchange_state.json

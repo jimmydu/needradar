@@ -1,0 +1,18 @@
+# Google Trends 查询词：词根 × 垂直行业（笛卡尔展开见 collector）
+# 词根（数据/研究需求语义）
+market size
+industry statistics
+industry data
+dataset
+benchmark report
+# 垂直行业（从现有信号簇关键词衍生：榜单高频品类）
+dropshipping
+subscription box
+pet care
+home fitness
+mental health app
+meal kit
+electric bike
+wedding planning
+senior care
+creator economy

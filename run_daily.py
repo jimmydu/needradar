@@ -9,9 +9,10 @@ import logging
 from datetime import date, datetime, timedelta
 
 from collectors import (appstore, appstore_charts, betalist, cfpb, freelancer,
-                        googleplay_charts, indiegogo, kickstarter, news_rss,
-                        reddit, reddit_rss, remotejobs, sam_gov, shopify_apps,
-                        usaspending, youtube)
+                        google_trends, googleplay_charts, hf_datasets,
+                        indiegogo, kaggle_ds, kickstarter, news_rss, reddit,
+                        reddit_rss, remotejobs, sam_gov, shopify_apps,
+                        stackexchange, usaspending, youtube)
 from storage import get_session
 
 log = logging.getLogger(__name__)
@@ -33,6 +34,10 @@ COLLECTORS = [
     ("gplay_charts", googleplay_charts),
     ("remotejobs", remotejobs),
     ("shopify_apps", shopify_apps),
+    ("stackexchange", stackexchange),
+    ("google_trends", google_trends),
+    ("kaggle", kaggle_ds),
+    ("hf_datasets", hf_datasets),
 ]
 
 
