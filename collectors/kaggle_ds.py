@@ -53,6 +53,44 @@ def collect(date_from, date_to, session):
         return stats
 
     now = datetime.utcnow()
+
+    # tier-1: dataset REQUEST posts (demand semantics, pain path)
+    req_records = []
+    try:
+        for term in ("dataset request", "looking for dataset"):
+            r = api.forums_list_topics(group="all", sort_by="recent",
+                                       page_size=25, search=term)
+            stats["requests"] += 1
+            for t in (getattr(r, "topics", None) or []):
+                tid = getattr(t, "id", None)
+                title = getattr(t, "title", None)
+                if not tid or not title:
+                    continue
+                req_records.append({
+                    "source": "kaggle_requests",
+                    "source_id": str(tid),
+                    "signal_type": "数据请求",
+                    "title": title,
+                    "description": None,  # body needs a second call; MVP keeps title
+                    "amount": None, "naics": None, "state": None,
+                    "posted_at": None, "fetched_at": now,
+                    "url": f"https://www.kaggle.com/discussions/general/{tid}",
+                    "rating": getattr(t, "score", None),
+                    "raw_json": json.dumps({
+                        "search_term": term,
+                        "score": getattr(t, "score", None),
+                        "total_comments": getattr(t, "totalComments", None),
+                        "forum": getattr(t, "forum", None) and getattr(t.forum, "title", None),
+                    }, ensure_ascii=False),
+                })
+    except Exception as e:
+        log.warning("kaggle request topics failed: %s", e)
+        stats["failed"] += 1
+
+    ins, skip = upsert_signals(session, req_records)
+    stats["inserted"] += ins
+    stats["skipped"] += skip
+    log.info("kaggle_requests: %d topics, %d inserted", len(req_records), ins)
     records = []
     try:
         for term in ("market research", "industry", "consumer", "sales"):

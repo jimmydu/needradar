@@ -19,7 +19,7 @@ This repository contains the data collection layer. All collectors use **officia
 | YouTube | Official Data API v3 (`YOUTUBE_API_KEY`, 10k units/day) | Pain-keyword short videos + top comments |
 | Stack Exchange OpenData | Official API (no key, 300/day) | Dataset-request questions, votes = demand strength |
 | Google Trends | pytrends (unofficial, daily-capped) | Rising queries around data/research verticals |
-| Kaggle | Official API (`~/.kaggle/kaggle.json`) | Dataset search popularity |
+| Kaggle | Official API (`~/.kaggle/kaggle.json`) | 热门数据集=供给侧（题材雷达不上主榜）；`kaggle_requests` 论坛请求帖=需求侧（上主榜） |
 | GitHub | Official REST search API（无 token 10 次/分钟；`GITHUB_TOKEN` 只读 PAT 提速） | 飙升仓库（成功样本）+ 高赞痛点 issue（👍=需求强度） |
 | Hugging Face Datasets | Public Hub API (no key) | Trending/most-downloaded datasets (AI circle) |
 | Freelancer research queries | Official API (existing key) | Paid manual data assembly = data-platform demand |

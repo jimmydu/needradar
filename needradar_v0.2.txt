@@ -138,7 +138,7 @@
 | Reddit 数据求源版 | RSS（r/datasets、r/opendata、r/datarequests） | P2–P3 | 复用 reddit_rss 采集器 |
 | Stack Exchange OpenData | 官方 API 免 key（300 次/天配额，增量+状态文件） | P3 | 投票数=需求强度；opendata 站流量小 |
 | Google Trends | pytrends 非官方接口，每日一次状态文件限频 | 辅助 | 词根×行业单词查询（组合查询实测零召回）；pytrends 与 urllib3 2.x 有兼容坑（retries 参数勿传） |
-| Kaggle | 官方 API，需 ~/.kaggle/kaggle.json | P3 | 无 key 优雅跳过；数据集热门度=数据需求代理 |
+| Kaggle | 官方 API（`~/.kaggle/access_token` 裸 token + `KAGGLE_USERNAME`，或标准 kaggle.json） | P3 | 2026-10-11 语义修正：热门数据集是供给侧 → 降级题材雷达不上主榜；需求语义走 `kaggle_requests`（官方 forums API 搜 dataset request 帖，进痛点链路） |
 | Hugging Face Datasets | Hub 公共 API 免 key | P3 | 偏 AI 圈（raw_json.circle='ai' 标注）；供给侧语义，上榜需人工判读 |
 | data.gov | — | — | **降级未接**：CKAN API 端点实测 404（2026-10-11），疑似平台迁移；供给侧原料非需求信号，暂不追 |
 | Indiegogo | 官方公共 API（Gamefound 平台），免认证 | P5 | 2025-10 迁移后有官方 API；无分类字段，软硬件靠文本规则；已实现（2026-10-10） |

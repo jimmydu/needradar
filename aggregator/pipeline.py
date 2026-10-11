@@ -178,6 +178,10 @@ def load_window_members(session, weeks=4, window_end=None):
         # 与 Google Trends 上升查询——只监控簇生长，不上需求主榜
         if s.source in ("hf_datasets", "google_trends"):
             continue
+        # kaggle 热门数据集同理是供给侧语义（2026-10-11 用户修正）；需求语义走
+        # kaggle_requests 源（论坛数据集请求帖），不进此排除
+        if s.source == "kaggle":
+            continue
         # prefilter-skipped rows with no rule P-level are dead for clustering
         if getattr(e, "skip_reason", None) and e.p_level is None:
             continue

@@ -102,6 +102,8 @@ def rule_p_level(signal):
         return 3 if (signal.rating or 0) >= 3 else None  # votes as demand strength
     if source in ("hf_datasets", "kaggle"):
         return 3  # dataset adoption = data demand proxy
+    if source == "kaggle_requests":
+        return 3  # dataset request posts = direct demand
     if source == "betalist":
         return 3  # launch-stage indie product
     if source == "github_rising":

@@ -30,6 +30,7 @@ LLM_POLICY = {
     "freelancer_research": "never",
     "google_trends": "never",
     "kaggle": "never",
+    "kaggle_requests": "never",  # 请求帖标题自解释，规则 P3 即可
     "hf_datasets": "never",
     # 众筹/新闻: 规则已能定级（P5 金额、触发事件标签），标题/简介直接进聚类，
     # LLM 语义抽取对榜单边际收益低（e4b 每条 ~18s，全量 Kickstarter 需 5+ 小时）
