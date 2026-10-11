@@ -107,7 +107,8 @@ def canonical_topic(signal, extraction, raw):
     headlines don't hijack topic summaries or inflate evidence counts.
     Crowdfunding sources are products, not pain posts — excluded likewise."""
     if signal.source in ("sam_gov", "usaspending", "news", "kickstarter", "indiegogo",
-                         "appstore_indie", "betalist"):
+                         "appstore_indie", "betalist", "gplay_indie",
+                         "remoteok", "remotive", "weworkremotely"):
         return None
     text = " ".join(filter(None, [
         extraction.pain_point, signal.title,
@@ -159,6 +160,10 @@ def residual_bucket_key(signal, extraction, raw):
     if src == "appstore_indie":
         genres = raw.get("genres") or ["misc"]
         return f"indie:{genres[0]}"
+    if src == "gplay_indie":
+        return f"indie_gp:{raw.get('genre') or 'misc'}"
+    if src in ("remoteok", "remotive", "weworkremotely"):
+        return f"remotejob:{(raw.get('category') or raw.get('company') or 'misc')[:40]}"
     app = raw.get("app_name") or raw.get("app_id")
     if src == "appstore" and app:
         return f"app:{app}"

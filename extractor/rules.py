@@ -90,6 +90,10 @@ def rule_p_level(signal):
         return 5 if signal.amount else 3
     if source == "appstore_indie":
         return 4  # indie app with verified grossing rank = proven monetization
+    if source == "gplay_indie":
+        return 4  # same, Google Play side
+    if source in ("remoteok", "remotive", "weworkremotely"):
+        return 3  # employer demand signal (remote hiring)
     if source == "betalist":
         return 3  # launch-stage indie product
     if source == "manual":

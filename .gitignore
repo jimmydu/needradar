@@ -9,3 +9,4 @@ __pycache__/
 *.db.bak
 kickstarter_state.json
 .feishu_chat_id
+node_modules/

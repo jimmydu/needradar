@@ -17,3 +17,6 @@ nocode
 selfhosted
 productivity
 microsaas
+digitalnomad
+remotework
+overemployed

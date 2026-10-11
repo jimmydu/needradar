@@ -9,8 +9,9 @@ import logging
 from datetime import date, datetime, timedelta
 
 from collectors import (appstore, appstore_charts, betalist, cfpb, freelancer,
-                        indiegogo, kickstarter, news_rss, reddit, reddit_rss,
-                        sam_gov, usaspending, youtube)
+                        googleplay_charts, indiegogo, kickstarter, news_rss,
+                        reddit, reddit_rss, remotejobs, sam_gov, usaspending,
+                        youtube)
 from storage import get_session
 
 log = logging.getLogger(__name__)
@@ -29,6 +30,8 @@ COLLECTORS = [
     ("news", news_rss),
     ("appstore_charts", appstore_charts),
     ("betalist", betalist),
+    ("gplay_charts", googleplay_charts),
+    ("remotejobs", remotejobs),
 ]
 
 
