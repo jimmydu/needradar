@@ -2,3 +2,11 @@
 falling back to feishu open api
 feishu open_id chunk 1/1 error: 230101 Sending messages to users is temporarily unavailable.
 feishu api (chat_id): sent 1 chunk(s)
+2026-10-11 07:03:02 send: cc-connect: no active session
+falling back to feishu open api
+feishu open_id chunk 1/1 error: 230101 Sending messages to users is temporarily unavailable.
+feishu api (chat_id): sent 1 chunk(s)
+2026-10-11 07:03:02 send: cc-connect: no active session
+falling back to feishu open api
+feishu open_id chunk 1/1 error: 230101 Sending messages to users is temporarily unavailable.
+feishu api (chat_id): sent 1 chunk(s)

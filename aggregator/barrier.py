@@ -140,30 +140,36 @@ def rule_barrier(members, stats):
         notes.append("渠道：无政府销售渠道")
 
     score = round(0.35 * tech + 0.30 * compliance + 0.20 * resource + 0.15 * channel, 3)
+    capped = False
     if gov_only:
         # cap: pure government demand can never be an easy indie entry
         score = min(score, 0.35)
+        capped = True
 
     # general-purpose AI agents (Meta Muse, Claude/ChatGPT assistants) can
     # execute "online errand" demands — support calls, cancellations, refunds,
     # account deletion, disputes — directly, so these are never low-barrier.
     if _hits(text, AGENT_REPLACEABLE):
         score = min(score, 0.5)
+        capped = True
         notes.append("通用 agent 可代办（客服/退订/维权类线上任务，正面强敌）")
     # legal-practice-dependent demands (class actions, settlement claims,
     # law-firm lead gen): dead barrier without a US entity / bar admission
     if _hits(text, LEGAL_SERVICE):
         score = min(score, 0.3)
+        capped = True
         notes.append("法律服务依赖：集体诉讼/和解申领需执业资质或律师关系")
     # travel/ticket/hotel booking & price aggregation: OTA-covered + inventory
     if _hits(text, TRAVEL_OTA):
         score = min(score, 0.3)
+        capped = True
         notes.append("旅行/门票预订：OTA 巨头与官方分销覆盖，库存协议壁垒")
     # cold-start / two-sided network effects: needs both sides or paid scale
     if _hits(text, COLD_START):
         score = min(score, 0.4)
+        capped = True
         notes.append("冷启动：双边网络效应/BD 关系/流量采买，无分发优势难存活")
-    return score, "rule", "；".join(notes) if notes else "低门槛"
+    return score, "rule", "；".join(notes) if notes else "低门槛", capped
 
 
 BARRIER_ARBITRATION_SYSTEM = """你是独立开发者进入门槛评估员。给定需求主题（关键词 + 代表性痛点 + 当前门槛说明），

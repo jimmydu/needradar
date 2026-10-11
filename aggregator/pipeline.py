@@ -338,6 +338,12 @@ def run(session, weeks=4, use_llm=True, dry_run=False, run_date=None):
     # score all clusters; candidate pool = P_max >= P3
     stats_all = [scoring.cluster_stats(m, None, window_end) for _, m in clusters]
     all_decayed = [st["decayed"] for st in stats_all if st["p_max"] and st["p_max"] >= 3]
+    # cross-run barrier verdicts: canonical topic names are stable, so a
+    # verdict arbitrated once (e.g. by kimi) is inherited by later runs and
+    # only never-seen clusters go back to the LLM
+    from storage import BarrierVerdict
+    verdicts = {v.name: v for v in session.query(BarrierVerdict).all()}
+
     results = []
     excluded_big = []  # evidence-rich themes below the P3 payment-intent bar
     for (key, members), st in zip(clusters, stats_all):
@@ -351,16 +357,27 @@ def run(session, weeks=4, use_llm=True, dry_run=False, run_date=None):
         conf = scoring.confidence_score(st)
         acc = scoring.accessibility_score(st)
         fit_val, fit_method, fit_note = fit.rule_software_fit(members, st)
-        barrier_val, barrier_method, barrier_note = barrier_mod.rule_barrier(members, st)
+        barrier_val, barrier_method, barrier_note, barrier_capped = \
+            barrier_mod.rule_barrier(members, st)
         kws, reps, topic = _cluster_brief((key, members))
+        name = topic or "、".join(kws[:3])
+        verdicted = False
+        v = verdicts.get(name)
+        if v and v.barrier is not None:
+            # rule caps stay a hard floor; otherwise inherit the verdict
+            barrier_val = min(barrier_val, v.barrier) if barrier_capped else v.barrier
+            barrier_note = v.note or barrier_note
+            verdicted = True
         results.append({
             "cluster": members, "topic": topic, "stats": st, **wps,
             "confidence": conf, "accessibility": acc,
             "software_fit": fit_val, "fit_method": fit_method, "fit_note": fit_note,
             "barrier": barrier_val, "barrier_method": barrier_method,
             "barrier_note": barrier_note,
+            "barrier_rule": barrier_val,
+            "barrier_capped": barrier_capped, "barrier_verdicted": verdicted,
             "final_score": round(wps["wps"] * conf * acc * fit_val * barrier_val, 4),
-            "name": topic or "、".join(kws[:3]),
+            "name": name,
             "summary": (f"{topic}：{reps[0]}" if topic and reps else
                         (topic or (reps[0] if reps else "、".join(kws[:3])))),
             "keywords": kws,
@@ -374,11 +391,25 @@ def run(session, weeks=4, use_llm=True, dry_run=False, run_date=None):
         results.sort(key=lambda r: -(r["wps"] * r["confidence"] * r["accessibility"]))
         ambiguous = [r for r in results[:120] if 0.3 < r["software_fit"] < 0.65]
         _fit_arbitrate(ambiguous, usage)
-        ambiguous_b = [r for r in results[:120] if r["barrier"] >= 0.45]
+        ambiguous_b = [r for r in results[:120]
+                       if r["barrier"] >= 0.45 and not r.get("barrier_verdicted")]
         _barrier_arbitrate(ambiguous_b, usage)
         for r in results:
+            # rule caps are a hard floor: the LLM may lower but never raise them
+            if r.get("barrier_capped") and r["barrier_method"] == "llm":
+                r["barrier"] = min(r["barrier_rule"], r["barrier"])
             r["final_score"] = round(r["wps"] * r["confidence"] * r["accessibility"]
                                      * r["software_fit"] * r["barrier"], 4)
+        # persist new verdicts for cross-run inheritance
+        from datetime import datetime as _dt
+        from extractor import llm as llm_mod
+        for r in results[:120]:
+            if r["barrier_method"] == "llm" and not r.get("barrier_verdicted"):
+                session.merge(BarrierVerdict(
+                    name=r["name"], barrier=r["barrier"], note=r["barrier_note"],
+                    model=(llm_mod.resolve_config("light") or (None, None, None))[1],
+                    run_date=run_date, updated_at=_dt.utcnow()))
+        session.commit()
 
     # hard filters: after scoring, before ranking
     survivors, filtered = filtering.apply_filters(

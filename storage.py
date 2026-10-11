@@ -90,6 +90,19 @@ class Cluster(Base):
     created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
 
 
+class BarrierVerdict(Base):
+    """Cross-run barrier verdicts, keyed by stable cluster identity (canonical
+    topic name / bucket key). Arbitrated once, inherited by later runs."""
+    __tablename__ = "barrier_verdicts"
+
+    name = Column(String(128), primary_key=True)
+    barrier = Column(Float)
+    note = Column(Text)
+    model = Column(String(64))
+    run_date = Column(String(10))
+    updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+
+
 class AppIndie(Base):
     """iTunes Lookup enrichment cache + indie heuristic per app."""
     __tablename__ = "app_indie"
