@@ -36,9 +36,19 @@ cd "$PROJECT" || exit 1
         LLM_OK=0
     fi
 
-    # SAM.gov 配额 ~10次/天：run_daily 默认窗口（昨天）= 4 请求，每天一次安全
+    # 采集配额倾斜（2026-10-11 回测）：sam_gov/usaspending 对该用户全部判死
+    # （无美国实体），gov 源降为每周一采集一次（题材雷达低频快照）；
+    # cfpb 每日 7k 条零痛点零 P 级，降为每周一。其余源每日。
+    DOW=$(date +%u)  # 1=周一
+    SKIP="kickstarter"  # Webrobots 月度数据集，同月秒退，但留着无害
+    if [ "$DOW" != "1" ]; then
+        SKIP="$SKIP,sam_gov,usaspending,cfpb"
+        echo "weekday $DOW: 低频源（sam_gov/usaspending/cfpb）跳过"
+    fi
+
+    # SAM.gov 配额 ~10次/天：run_daily 默认窗口（昨天）= 4 请求，每周一次安全
     echo "--- collect ---"
-    "$PY" run_daily.py
+    "$PY" run_daily.py --skip "$SKIP"
 
     echo "--- extract ---"
     # 增量抽取：每日新增有限，limit 防失控（e4b 约 18s/条）

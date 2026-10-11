@@ -52,6 +52,7 @@ class Extraction(Base):
     prompt_tokens = Column(Integer, default=0)
     completion_tokens = Column(Integer, default=0)
     llm_raw = Column(Text)
+    skip_reason = Column(Text)  # 预过滤原因（extractor/prefilter.py）；非空即跳过 LLM/聚类
     extracted_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
 
 
@@ -156,6 +157,9 @@ def _migrate(engine):
     if "trigger_type" not in ecols:
         with engine.begin() as conn:
             conn.execute(text("ALTER TABLE extractions ADD COLUMN trigger_type VARCHAR(32)"))
+    if "skip_reason" not in ecols:
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE extractions ADD COLUMN skip_reason TEXT"))
     ccols = {c["name"] for c in inspect(engine).get_columns("clusters")}
     for col, ddl in (("software_fit", "ALTER TABLE clusters ADD COLUMN software_fit FLOAT"),
                      ("fit_method", "ALTER TABLE clusters ADD COLUMN fit_method VARCHAR(16)"),

@@ -174,6 +174,9 @@ def load_window_members(session, weeks=4, window_end=None):
         # chart snapshots are market-direction evidence, not themes themselves
         if s.source == "appstore_charts":
             continue
+        # prefilter-skipped rows with no rule P-level are dead for clustering
+        if getattr(e, "skip_reason", None) and e.p_level is None:
+            continue
         if s.source in ("appstore", "reddit_rss", "reddit") and not e.pain_point:
             continue
         ts = s.posted_at or s.fetched_at

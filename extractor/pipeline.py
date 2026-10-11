@@ -54,12 +54,14 @@ def candidates(session, source=None, limit=None, force=False):
 
 
 def extract_batch(session, source=None, limit=None, force=False, dry_run=False, use_llm=True):
+    from extractor import prefilter
     stats = {"total": 0, "rule_p": 0, "llm_ok": 0, "llm_fail": 0, "no_p": 0,
-             "prompt_tokens": 0, "completion_tokens": 0}
+             "skipped": 0, "prompt_tokens": 0, "completion_tokens": 0}
     signals = candidates(session, source, limit, force)
     stats["total"] = len(signals)
 
     for sig in signals:
+        skip = prefilter.skip_reason(sig)
         text = " ".join(filter(None, [sig.title, sig.description]))
         rec = {
             "signal_id": sig.id,
@@ -71,6 +73,7 @@ def extract_batch(session, source=None, limit=None, force=False, dry_run=False, 
             "urgency": None, "current_solution": None, "alternatives": None,
             "supply_gap": None, "evidence_json": None, "model": None,
             "prompt_tokens": 0, "completion_tokens": 0, "llm_raw": None,
+            "skip_reason": skip,
             "extracted_at": datetime.utcnow(),
         }
         if rec["p_level"]:
@@ -78,7 +81,9 @@ def extract_batch(session, source=None, limit=None, force=False, dry_run=False, 
         else:
             stats["no_p"] += 1
 
-        if use_llm and _needs_llm(sig) and not dry_run:
+        if skip:
+            stats["skipped"] += 1
+        elif use_llm and _needs_llm(sig) and not dry_run:
             try:
                 fields, evidence, model, ptok, ctok, raw = llm.extract_semantics(sig)
                 rec.update({

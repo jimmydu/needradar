@@ -42,14 +42,16 @@ def main():
     p.add_argument("--from", dest="date_from")
     p.add_argument("--to", dest="date_to")
     p.add_argument("--source", choices=[n for n, _ in COLLECTORS] + ["all"], default="all")
+    p.add_argument("--skip", default="", help="逗号分隔的源名，本次跳过")
     args = p.parse_args()
     date_to = datetime.strptime(args.date_to, "%Y-%m-%d").date() if args.date_to else date.today() - timedelta(days=1)
     date_from = datetime.strptime(args.date_from, "%Y-%m-%d").date() if args.date_from else date_to
 
     session = get_session()
+    skip = {x.strip() for x in args.skip.split(",") if x.strip()}
     summary = {}
     for name, mod in COLLECTORS:
-        if args.source not in (name, "all"):
+        if args.source not in (name, "all") or name in skip:
             continue
         try:
             summary[name] = mod.collect(date_from, date_to, session)
