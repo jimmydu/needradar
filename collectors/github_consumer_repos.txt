@@ -1,0 +1,32 @@
+# 终端用户型开源产品清单（每行 owner/repo # 注释；终端用户=消费者/自由职业者/小企业，非开发者）
+# 全部经 GitHub API 实测 200 可访问（2026-10-12）
+immich-app/immich            # 照片管理（Google Photos 替代，消费者）
+nextcloud/server             # 网盘/协作（消费者+小企业）
+laurent22/joplin             # 笔记
+logseq/logseq                # 笔记/双链
+streetwriters/notesnook      # 加密笔记
+calcom/cal.com               # 日程预约（小企业/自由职业者）
+actualbudget/actual          # 个人记账
+firefly-iii/firefly-iii      # 记账
+bitwarden/clients            # 密码管理客户端（终端用户痛点密集）
+bitwarden/server             # 密码管理服务端
+jellyfin/jellyfin            # 家庭媒体服务器
+home-assistant/core          # 智能家居（消费者）
+freshrss/FreshRSS            # RSS 阅读
+sissbruecker/linkding        # 书签管理
+paperless-ngx/paperless-ngx  # 家庭/小企业文档扫描归档
+go-vikunja/vikunja           # 任务管理
+twentyhq/twenty              # 开源 CRM（小企业）
+chatwoot/chatwoot            # 开源客服（小企业）
+documenso/documenso          # 电子签名（自由职业者/小企业）
+jgraph/drawio                # 图表工具（普通用户）
+snipe/snipe-it               # 资产/库存管理（小企业 IT）
+grocy/grocy                  # 家庭杂货/库存
+Stirling-Tools/Stirling-PDF  # PDF 工具（普通用户高频痛点）
+TandoorRecipes/recipes       # 食谱管理
+karakeep-app/karakeep          # 稍后读/收藏（消费者，原 hoarder 改名）
+openfoodfacts/openfoodfacts-server  # 食品成分（消费者+公益）
+photoprism/photoprism        # 照片管理 AI 分类（消费者）
+Lidarr/Lidarr                # 音乐库（爱好者）
+Radarr/Radarr                # 电影库（爱好者）
+appsmithorg/appsmith         # 内部工具（偏企业，观察）

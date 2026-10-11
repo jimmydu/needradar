@@ -128,10 +128,11 @@ def rule_barrier(members, stats):
     gov_only = set(stats["sources"]) <= GOV_SOURCES
 
     # 平台主场（2026-10-11）：痛点发生在某平台社区内且诉求指向该平台自身
-    # 能力范围（kaggle 数据请求→kaggle 平台、github issue→该 repo 自身）——
-    # 在 incumbent 主场内找机会没有空间
+    # 能力范围（kaggle 数据请求→kaggle 平台）——incumbent 主场内无机会。
+    # github_issues 不在此列：消费者产品 issue 是普通用户痛点（2026-10-12
+    # 改造），只受 payer 开发者词表封顶约束，不受平台主场规则拦截。
     srcs = set(stats["sources"])
-    platform_home = srcs <= {"kaggle_requests"} or srcs <= {"github_issues"}
+    platform_home = srcs <= {"kaggle_requests"}
     if gov_only:
         # government contracting requires a US entity / contractor registration
         # (SAM.gov) and often clearances — the compliance dim must reflect that

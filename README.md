@@ -20,7 +20,7 @@ This repository contains the data collection layer. All collectors use **officia
 | Stack Exchange OpenData | Official API (no key, 300/day) | Dataset-request questions, votes = demand strength |
 | Google Trends | pytrends (unofficial, daily-capped) | Rising queries around data/research verticals |
 | Kaggle | Official API (`~/.kaggle/kaggle.json`) | 热门数据集=供给侧（题材雷达不上主榜）；`kaggle_requests` 论坛请求帖=需求侧（上主榜） |
-| GitHub | Official REST search API（无 token 10 次/分钟；`GITHUB_TOKEN` 只读 PAT 提速） | 飙升仓库（成功样本）+ 高赞痛点 issue（👍=需求强度） |
+| GitHub | Official REST search API（无 token 10 次/分钟；`GITHUB_TOKEN` 只读 PAT 提速） | 终端用户型开源产品 issue（消费者痛点，👍=需求强度）+ 飙升仓库（题材雷达） |
 | TechCrunch + M&A queries | 标签 RSS 免认证（startups/acquisitions/ma）+ Google News 并购词 | 并购方向验证（题材雷达不上主榜）；三要素抽取 → watchlist 余波监控 |
 | Hugging Face Datasets | Public Hub API (no key) | Trending/most-downloaded datasets (AI circle) |
 | Freelancer research queries | Official API (existing key) | Paid manual data assembly = data-platform demand |
@@ -83,7 +83,7 @@ uv venv && uv pip install -r requirements.txt   # 或 python3 -m venv .venv && p
 - `REDDIT_SUBS_FILE`：默认 `./reddit_subs.txt`（每行一个 subreddit 名）。
 - `YOUTUBE_API_KEY`：YouTube Data API v3 key。申请：Google Cloud Console → 建项目 → 启用 "YouTube Data API v3" → 凭据 → 创建 API 密钥。免费配额 10,000 单位/天，本采集器每日约用 ~700 单位（6 次 search×100 + 5 次 commentThreads×1）。未配置自动跳过。
 - Kaggle：API token 从 https://www.kaggle.com/settings → Create New API Token 下载 `kaggle.json` 放 `~/.kaggle/kaggle.json`（勿提交仓库）。也接受 `~/.kaggle/access_token` 裸 token 文件 + `KAGGLE_USERNAME` 环境变量配对。未配置自动跳过。
-- GitHub：`collectors/github.py` 双通道——飙升仓库（created<90d & stars>500，成功样本）+ 高赞痛点 issue（按 👍 排序、客户端痛点词过滤，label 词表各 repo 不一不能进查询）。无 token 时限速 6s/请求（search 10 次/分钟），403/429 退避 + `github_state.json` 断点续采。可选提速：github.com/settings/tokens 生成只读 PAT 设 `GITHUB_TOKEN` 环境变量（勿提交）。payer 语义：GitHub 簇默认从严（开发者客户 0.2-0.4），仅企业托管版/非开发者产品化空间两种形态豁免（见 payer.py）。
+- GitHub：`collectors/github.py` 双通道——终端用户型开源产品 issue（30 仓清单 `collectors/github_consumer_repos.txt`，消费者/小企业痛点）+ 飙升仓库（题材雷达不上主榜）。无 token 限速 6s/请求，403/429 退避 + `github_state.json` 断点续采（跨天重置）。提速：github.com/settings/tokens 生成只读 PAT 设 `GITHUB_TOKEN`（勿提交）。Discussions 暂缓。
 - `FREELANCER_API_KEY_FILE`：默认 `./freelancer.api.key`（纯文本 token，已在 .gitignore）。也可用 `FREELANCER_ACCESS_TOKEN` 环境变量。
 
 ### Freelancer.com 凭证

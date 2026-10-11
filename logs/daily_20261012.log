@@ -1,0 +1,287 @@
+===== daily run 2026-10-12 03:17:00 =====
+ollama: OK
+--- collect ---
+2026-10-12 03:17:00 another instance running, exit
+2026-10-12 03:17:02,443 INFO collectors.sam_gov ptype=o offset=0 -> 0 records (total=0)
+2026-10-12 03:17:03,360 INFO collectors.sam_gov ptype=k offset=0 -> 3 records (total=3)
+2026-10-12 03:17:04,275 INFO collectors.sam_gov ptype=r offset=0 -> 1 records (total=1)
+2026-10-12 03:17:05,206 INFO collectors.sam_gov ptype=a offset=0 -> 0 records (total=0)
+2026-10-12 03:17:06,303 INFO collectors.usaspending page=1 -> 0 records
+2026-10-12 03:17:08,331 INFO collectors.appstore chart snapshot 2026-10-12 -> 100 entries, 100 inserted
+2026-10-12 03:17:08,839 INFO collectors.appstore app 584606479 (584606479) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:09,538 INFO collectors.appstore app 618783545 (618783545) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:10,567 INFO collectors.appstore app 586683407 (586683407) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:11,096 INFO collectors.appstore app 335393788 (335393788) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:11,596 INFO collectors.appstore app 371294472 (371294472) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:12,053 INFO collectors.appstore app 1451094657 (1451094657) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:12,606 INFO collectors.appstore app 1232780281 (1232780281) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:13,223 INFO collectors.appstore app 897446215 (897446215) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:13,732 INFO collectors.appstore app 6448311069 (ChatGPT) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:14,360 INFO collectors.appstore app 544007664 (YouTube) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:14,966 INFO collectors.appstore app 835599320 (TikTok - Videos, Shop & LIVE) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:15,581 INFO collectors.appstore app 530168168 (Paramount+) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:16,002 INFO collectors.appstore app 1508186374 (Peacock TV: Stream TV & Movies) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:16,570 INFO collectors.appstore app 447188370 (Snapchat) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:17,024 INFO collectors.appstore app 1621328561 (MONOPOLY GO!) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:17,833 INFO collectors.appstore app 389801252 (Instagram) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:18,280 INFO collectors.appstore app 6473753684 (Claude by Anthropic) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:18,956 INFO collectors.appstore app 431946152 (Roblox) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:19,402 INFO collectors.appstore app 1482155847 (Royal Match) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:19,977 INFO collectors.appstore app 329913454 (Crunchyroll) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:20,398 INFO collectors.appstore app 1623318294 (Gossip Harbor®: Merge & Story) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:20,898 INFO collectors.appstore app 288429040 (LinkedIn: Community & Network) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:21,361 INFO collectors.appstore app 1017492454 (YouTube Music) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:21,822 INFO collectors.appstore app 1666653815 (HBO Max: Stream Movies & TV) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:22,287 INFO collectors.appstore app 422689480 (Gmail - Email by Google) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:22,851 INFO collectors.appstore app 1500855883 (CapCut: Photo & Video Editor) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:23,363 INFO collectors.appstore app 384830320 (Life360: Family Safety & GPS) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:23,805 INFO collectors.appstore app 6670324846 (Grok AI) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:24,351 INFO collectors.appstore app 1446075923 (Disney+) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:24,784 INFO collectors.appstore app 284035177 (Pandora: Music & Podcasts) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:25,381 INFO collectors.appstore app 553834731 (Candy Crush Saga) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:25,918 INFO collectors.appstore app 547702041 (Tinder Dating App: Date & Chat) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:26,533 INFO collectors.appstore app 570060128 (Duolingo: Language Lessons) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:27,233 INFO collectors.appstore app 284882215 (Facebook) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:27,689 INFO collectors.appstore app 1606549505 (Royal Kingdom) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:28,281 INFO collectors.appstore app 545519333 (Amazon Prime Video) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:28,790 INFO collectors.appstore app 962194608 (Google Photos: Backup & Edit) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:29,407 INFO collectors.appstore app 379693831 (Audible: Audiobooks & Podcasts) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:30,016 INFO collectors.appstore app 319881193 (Grindr - Gay Dating & Chat) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:30,446 INFO collectors.appstore app 672902340 (onX Hunt: GPS Hunting Maps) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:31,046 INFO collectors.appstore app 327630330 (Dropbox: Cloud Storage Backup) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:31,484 INFO collectors.appstore app 6739554056 (Kingshot) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:32,062 INFO collectors.appstore app 376510438 (Hulu: Stream TV shows & movies) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:32,575 INFO collectors.appstore app 1149994032 (Facetune: Photo & Video Editor) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:33,064 INFO collectors.appstore app 1176027022 (Toon Blast) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:33,538 INFO collectors.appstore app 1094591345 (Pokémon GO) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:34,527 INFO collectors.appstore app 389781154 (NFL) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:35,142 INFO collectors.appstore app 333903271 (X) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:35,564 INFO collectors.appstore app 6443575749 (Whiteout Survival) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:36,005 INFO collectors.appstore app 1308415878 (GameChanger) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:36,545 INFO collectors.appstore app 595287172 (Hinge Dating App: Match & Date) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:37,080 INFO collectors.appstore app 686449807 (Telegram Messenger) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:37,580 INFO collectors.appstore app 6445905219 (DramaBox - Stream Drama Shorts) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:38,104 INFO collectors.appstore app 1510944943 (Cleanup: Phone Storage Cleaner) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:38,719 INFO collectors.appstore app 460177396 (Twitch: Live Streaming) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:39,235 INFO collectors.appstore app 985746746 (Discord - Talk, Play, Hang Out) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:39,751 INFO collectors.appstore app 510855668 (Amazon Music: Songs & Podcasts) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:40,290 INFO collectors.appstore app 1300146617 (Free Fire x NARUTO SHIPPUDEN) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:40,859 INFO collectors.appstore app 341232718 (MyFitnessPal: Calorie Counter) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:41,380 INFO collectors.appstore app 6449094229 (Match Factory!) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:41,892 INFO collectors.appstore app 6471045672 (Tasty Travels: Merge Game) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:42,400 INFO collectors.appstore app 6572296119 (Tipsy Chat: Live Your Story) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:42,941 INFO collectors.appstore app 638689075 (Township) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:43,482 INFO collectors.appstore app 6448786147 (Last War:Survival) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:44,326 INFO collectors.appstore app 6464002625 (ShortMax - Short Dramas & TV) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:44,965 INFO collectors.appstore app 1105855019 (Gardenscapes) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:45,469 INFO collectors.appstore app 1502936453 (LADDER Strength Training Plans) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:45,917 INFO collectors.appstore app 6503272652 (Last Z: Survival Shooter) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:46,442 INFO collectors.appstore app 336353151 (SoundCloud: The Music You Love) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:47,013 INFO collectors.appstore app 1522122685 (Clapper: Video, Live, Chat) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:47,474 INFO collectors.appstore app 1180884341 (FaceApp: Perfect Face Editor) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:47,991 INFO collectors.appstore app 6751056652 (Pixel Flow!) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:48,658 INFO collectors.appstore app 6752672568 (Block Out! - Color Sort Puzzle) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:49,137 INFO collectors.appstore app 664575829 (Fishdom) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:49,675 INFO collectors.appstore app 930441707 (Bumble Dating App: Meet & Date) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:50,129 INFO collectors.appstore app 1636235979 (ReelShort - Stream Drama & TV) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:50,626 INFO collectors.appstore app 6779167923 (Colony Flow!) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:51,135 INFO collectors.appstore app 1288415553 (The Official Wyze App) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:51,597 INFO collectors.appstore app 317469184 (ESPN: Live Sports & Scores) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:52,022 INFO collectors.appstore app 426826309 (Strava: Run, Bike, Walk) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:52,562 INFO collectors.appstore app 284862083 (NYTimes: US and Global News) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:53,055 INFO collectors.appstore app 1195621598 (Homescapes) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:53,523 INFO collectors.appstore app 406889139 (Coin Master) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:53,986 INFO collectors.appstore app 1531467766 (ViX: TV, Sports and News) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:54,589 INFO collectors.appstore app 6670430706 (DramaWave - Dramas & Reels) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:55,104 INFO collectors.appstore app 1252497129 (PictureThis - Plant Identifier) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:55,614 INFO collectors.appstore app 1668000334 (Perplexity - AI Search & Chat) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:56,086 INFO collectors.appstore app 6478287397 (Learna: Speak & Learn English) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:56,601 INFO collectors.appstore app 6756058501 (Jelly Busters: Puzzle Game) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:57,088 INFO collectors.appstore app 1399446592 (The Zeus Network) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:57,555 INFO collectors.appstore app 957215308 (Raya) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:58,047 INFO collectors.appstore app 1098157959 (Evony) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:58,586 INFO collectors.appstore app 6499209744 (Magic Sort!) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:59,205 INFO collectors.appstore app 364387007 (The Wall Street Journal News) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:17:59,652 INFO collectors.appstore app 6504849169 (NetShort - Popular Dramas & TV) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:18:00,229 INFO collectors.appstore app 575980917 (Jackpot Party - Casino Slots) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:18:00,684 INFO collectors.appstore app 1243005112 (Lightning Link Casino Slots) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:18:01,195 INFO collectors.appstore app 6740043080 (Screwdom) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:18:01,693 INFO collectors.appstore app 1438779037 (Skylight App) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:18:02,202 INFO collectors.appstore app 6480136315 (Suno - AI Songs, Music, Lyrics) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:18:02,790 INFO collectors.appstore app 405075943 (AllTrails: Hike, Bike & Run) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:18:03,404 INFO collectors.appstore app 484672289 (NBA: Live Games & Scores) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:18:03,929 INFO collectors.appstore app 1094930513 (EA SPORTS FC Soccer Mobile 27) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:18:04,530 INFO collectors.appstore app 550221096 (STARZ) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:18:05,147 INFO collectors.appstore app 887914690 (Feeld: Dating for the Curious) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:18:05,650 INFO collectors.appstore app 1274132545 (Total Battle: War Strategy) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:18:06,148 INFO collectors.appstore app 1658822260 (Momo: AI Photo & Video Maker) page=1 -> 0 in window, 0 inserted
+2026-10-12 03:18:10,476 INFO collectors.cfpb 2026-10-11 -> 456 records (total=456)
+2026-10-12 03:18:12,740 INFO collectors.reddit_rss r/smallbusiness -> 18 in window, 18 inserted
+2026-10-12 03:18:18,570 WARNING collectors.reddit_rss HTTP 429, backing off 15s
+2026-10-12 03:18:35,265 INFO collectors.reddit_rss r/Entrepreneur -> 1 in window, 1 inserted
+2026-10-12 03:18:40,974 WARNING collectors.reddit_rss HTTP 429, backing off 15s
+2026-10-12 03:18:56,649 WARNING collectors.reddit_rss HTTP 429, backing off 30s
+2026-10-12 03:19:28,468 INFO collectors.reddit_rss r/SaaS -> 23 in window, 23 inserted
+2026-10-12 03:19:35,137 INFO collectors.reddit_rss r/bookkeeping -> 1 in window, 1 inserted
+2026-10-12 03:19:40,878 WARNING collectors.reddit_rss HTTP 429, backing off 15s
+2026-10-12 03:19:56,572 WARNING collectors.reddit_rss HTTP 429, backing off 30s
+2026-10-12 03:20:28,403 INFO collectors.reddit_rss r/construction -> 8 in window, 8 inserted
+2026-10-12 03:20:34,229 WARNING collectors.reddit_rss HTTP 429, backing off 15s
+2026-10-12 03:20:50,109 WARNING collectors.reddit_rss HTTP 429, backing off 30s
+2026-10-12 03:21:20,822 WARNING collectors.reddit_rss HTTP 429 for https://www.reddit.com/r/landscaping/.rss
+2026-10-12 03:21:27,542 INFO collectors.reddit_rss r/HVAC -> 4 in window, 4 inserted
+2026-10-12 03:21:33,422 WARNING collectors.reddit_rss HTTP 429, backing off 15s
+2026-10-12 03:21:49,194 WARNING collectors.reddit_rss HTTP 429, backing off 30s
+2026-10-12 03:22:21,123 INFO collectors.reddit_rss r/weddingplanning -> 19 in window, 19 inserted
+2026-10-12 03:22:27,999 INFO collectors.reddit_rss r/ems -> 0 in window, 0 inserted
+2026-10-12 03:22:33,729 WARNING collectors.reddit_rss HTTP 429, backing off 15s
+2026-10-12 03:22:49,610 WARNING collectors.reddit_rss HTTP 429, backing off 30s
+2026-10-12 03:23:21,261 INFO collectors.reddit_rss r/legaladvice -> 18 in window, 18 inserted
+2026-10-12 03:23:26,960 WARNING collectors.reddit_rss HTTP 429, backing off 15s
+2026-10-12 03:23:43,699 INFO collectors.reddit_rss r/SideProject -> 23 in window, 23 inserted
+2026-10-12 03:23:49,392 WARNING collectors.reddit_rss HTTP 429, backing off 15s
+2026-10-12 03:24:06,138 INFO collectors.reddit_rss r/AppIdeas -> 9 in window, 9 inserted
+2026-10-12 03:24:11,807 WARNING collectors.reddit_rss HTTP 429, backing off 15s
+2026-10-12 03:24:28,485 INFO collectors.reddit_rss r/lightbulb -> 2 in window, 2 inserted
+2026-10-12 03:24:34,275 WARNING collectors.reddit_rss HTTP 429, backing off 15s
+2026-10-12 03:24:50,136 WARNING collectors.reddit_rss HTTP 429, backing off 30s
+2026-10-12 03:25:21,957 INFO collectors.reddit_rss r/EntrepreneurRideAlong -> 15 in window, 15 inserted
+2026-10-12 03:25:28,888 INFO collectors.reddit_rss r/nocode -> 4 in window, 4 inserted
+2026-10-12 03:25:34,609 WARNING collectors.reddit_rss HTTP 429, backing off 15s
+2026-10-12 03:25:50,346 WARNING collectors.reddit_rss HTTP 429, backing off 30s
+2026-10-12 03:26:21,977 INFO collectors.reddit_rss r/selfhosted -> 17 in window, 17 inserted
+2026-10-12 03:26:27,827 WARNING collectors.reddit_rss HTTP 429, backing off 15s
+2026-10-12 03:26:43,697 WARNING collectors.reddit_rss HTTP 429, backing off 30s
+2026-10-12 03:27:14,381 WARNING collectors.reddit_rss HTTP 429 for https://www.reddit.com/r/productivity/.rss
+2026-10-12 03:27:19,958 WARNING collectors.reddit_rss HTTP 429, backing off 15s
+2026-10-12 03:27:35,820 WARNING collectors.reddit_rss HTTP 429, backing off 30s
+2026-10-12 03:28:08,090 INFO collectors.reddit_rss r/microsaas -> 9 in window, 9 inserted
+2026-10-12 03:28:14,014 WARNING collectors.reddit_rss HTTP 429, backing off 15s
+2026-10-12 03:28:29,887 WARNING collectors.reddit_rss HTTP 429, backing off 30s
+2026-10-12 03:29:01,599 INFO collectors.reddit_rss r/digitalnomad -> 9 in window, 9 inserted
+2026-10-12 03:29:08,435 INFO collectors.reddit_rss r/remotework -> 1 in window, 1 inserted
+2026-10-12 03:29:14,122 WARNING collectors.reddit_rss HTTP 429, backing off 15s
+2026-10-12 03:29:29,840 WARNING collectors.reddit_rss HTTP 429, backing off 30s
+2026-10-12 03:30:01,481 INFO collectors.reddit_rss r/overemployed -> 4 in window, 4 inserted
+2026-10-12 03:30:07,269 WARNING collectors.reddit_rss HTTP 429, backing off 15s
+2026-10-12 03:30:24,221 INFO collectors.reddit_rss r/datasets -> 4 in window, 4 inserted
+2026-10-12 03:30:30,104 WARNING collectors.reddit_rss HTTP 429, backing off 15s
+2026-10-12 03:30:45,873 WARNING collectors.reddit_rss HTTP 429, backing off 30s
+2026-10-12 03:31:16,957 INFO collectors.reddit_rss r/opendata -> 0 in window, 0 inserted
+2026-10-12 03:31:22,738 WARNING collectors.reddit_rss HTTP 429, backing off 15s
+2026-10-12 03:31:38,511 WARNING collectors.reddit_rss HTTP 429, backing off 30s
+2026-10-12 03:32:09,236 WARNING collectors.reddit_rss HTTP 429 for https://www.reddit.com/r/datarequests/.rss
+2026-10-12 03:32:14,386 WARNING collectors.reddit Reddit credentials not configured (set REDDIT_CLIENT_ID / REDDIT_CLIENT_SECRET / REDDIT_USERNAME); skipping reddit source
+2026-10-12 03:32:14,387 WARNING collectors.freelancer Freelancer token not configured (set FREELANCER_ACCESS_TOKEN or ./freelancer.api.key); skipping freelancer source
+2026-10-12 03:32:15,490 INFO collectors.indiegogo indiegogo: 216 active, 0 in window, 9 hardware-filtered
+2026-10-12 03:32:15,491 WARNING collectors.youtube YOUTUBE_API_KEY not set; skipping youtube source (get a key: Google Cloud Console -> enable YouTube Data API v3 -> create API key)
+2026-10-12 03:32:16,414 INFO collectors.news_rss news '"can\'t afford"' -> 12 in window, 12 inserted
+2026-10-12 03:32:20,412 INFO collectors.news_rss news '"price hike" OR "prices increase" OR "fees increase"' -> 6 in window, 6 inserted
+2026-10-12 03:32:24,308 INFO collectors.news_rss news '"shortage" OR "backlog"' -> 22 in window, 22 inserted
+2026-10-12 03:32:28,696 INFO collectors.news_rss news '"class action settlement"' -> 4 in window, 3 inserted
+2026-10-12 03:32:32,586 INFO collectors.news_rss news '"shuts down" OR "discontinued" OR "shutting down"' -> 17 in window, 16 inserted
+2026-10-12 03:32:36,679 INFO collectors.news_rss news '"new rule" "takes effect"' -> 0 in window, 0 inserted
+2026-10-12 03:32:40,579 INFO collectors.news_rss news '"layoffs" OR "hiring freeze"' -> 2 in window, 2 inserted
+2026-10-12 03:32:44,368 INFO collectors.news_rss news '"no app for"' -> 0 in window, 0 inserted
+2026-10-12 03:32:48,453 INFO collectors.news_rss news '"looking for an app" OR "looking for an alternative"' -> 0 in window, 0 inserted
+2026-10-12 03:32:52,353 INFO collectors.news_rss news '"alternative to" AND (app OR software)' -> 2 in window, 2 inserted
+2026-10-12 03:32:56,130 INFO collectors.news_rss news '"can\'t find an app" OR "can\'t find a tool"' -> 0 in window, 0 inserted
+2026-10-12 03:33:00,023 INFO collectors.news_rss news '"there should be an app"' -> 0 in window, 0 inserted
+2026-10-12 03:33:04,020 INFO collectors.news_rss news '"new app helps"' -> 0 in window, 0 inserted
+2026-10-12 03:33:07,662 INFO collectors.news_rss news '"launched app for"' -> 0 in window, 0 inserted
+2026-10-12 03:33:11,759 INFO collectors.news_rss news 'petition AND (app OR software OR online)' -> 2 in window, 2 inserted
+2026-10-12 03:33:16,686 INFO collectors.appstore_charts charts topgrossingapplications/overall -> 100 entries, 100 inserted
+2026-10-12 03:33:19,413 INFO collectors.appstore_charts charts topgrossingapplications/productivity -> 100 entries, 100 inserted
+2026-10-12 03:33:22,077 INFO collectors.appstore_charts charts topgrossingapplications/utilities -> 100 entries, 100 inserted
+2026-10-12 03:33:24,790 INFO collectors.appstore_charts charts topgrossingapplications/developer-tools -> 100 entries, 100 inserted
+2026-10-12 03:33:27,294 INFO collectors.appstore_charts charts topgrossingapplications/health-fitness -> 100 entries, 100 inserted
+2026-10-12 03:33:30,090 INFO collectors.appstore_charts charts topgrossingapplications/education -> 100 entries, 100 inserted
+2026-10-12 03:33:32,719 INFO collectors.appstore_charts charts toppaidapplications/overall -> 100 entries, 100 inserted
+2026-10-12 03:33:35,402 INFO collectors.appstore_charts charts toppaidapplications/productivity -> 99 entries, 99 inserted
+2026-10-12 03:33:37,955 INFO collectors.appstore_charts charts toppaidapplications/utilities -> 98 entries, 98 inserted
+2026-10-12 03:33:40,423 INFO collectors.appstore_charts charts toppaidapplications/developer-tools -> 100 entries, 100 inserted
+2026-10-12 03:33:43,007 INFO collectors.appstore_charts charts toppaidapplications/health-fitness -> 94 entries, 94 inserted
+2026-10-12 03:33:45,935 INFO collectors.appstore_charts charts toppaidapplications/education -> 97 entries, 97 inserted
+2026-10-12 03:33:47,947 INFO collectors.betalist betalist: 52 startups, 14 inserted
+2026-10-12 03:33:47,954 WARNING collectors.googleplay_charts node charts failed ([Errno 2] No such file or directory: 'node') GROSSING/APPLICATION
+2026-10-12 03:33:50,111 WARNING collectors.googleplay_charts node charts failed ([Errno 2] No such file or directory: 'node') GROSSING/PRODUCTIVITY
+2026-10-12 03:33:52,265 WARNING collectors.googleplay_charts node charts failed ([Errno 2] No such file or directory: 'node') GROSSING/TOOLS
+2026-10-12 03:33:54,420 WARNING collectors.googleplay_charts node charts failed ([Errno 2] No such file or directory: 'node') GROSSING/HEALTH_AND_FITNESS
+2026-10-12 03:33:56,578 WARNING collectors.googleplay_charts node charts failed ([Errno 2] No such file or directory: 'node') GROSSING/EDUCATION
+2026-10-12 03:33:58,733 WARNING collectors.googleplay_charts node charts failed ([Errno 2] No such file or directory: 'node') GROSSING/BUSINESS
+2026-10-12 03:34:00,878 WARNING collectors.googleplay_charts node charts failed ([Errno 2] No such file or directory: 'node') TOP_PAID/APPLICATION
+2026-10-12 03:34:03,032 WARNING collectors.googleplay_charts node charts failed ([Errno 2] No such file or directory: 'node') TOP_PAID/PRODUCTIVITY
+2026-10-12 03:34:05,189 WARNING collectors.googleplay_charts node charts failed ([Errno 2] No such file or directory: 'node') TOP_PAID/TOOLS
+2026-10-12 03:34:07,344 WARNING collectors.googleplay_charts node charts failed ([Errno 2] No such file or directory: 'node') TOP_PAID/HEALTH_AND_FITNESS
+2026-10-12 03:34:09,500 WARNING collectors.googleplay_charts node charts failed ([Errno 2] No such file or directory: 'node') TOP_PAID/EDUCATION
+2026-10-12 03:34:11,651 WARNING collectors.googleplay_charts node charts failed ([Errno 2] No such file or directory: 'node') TOP_PAID/BUSINESS
+2026-10-12 03:34:13,803 INFO collectors.googleplay_charts gplay charts: 0 entries, 0 unique grossing apps
+2026-10-12 03:34:13,803 INFO collectors.googleplay_charts gplay indie signals: 0 (0 new)
+2026-10-12 03:34:20,932 INFO collectors.remotejobs remote jobs: 15 in window, 14 inserted
+2026-10-12 03:36:09,004 INFO collectors.shopify_apps shopify: 448 unique apps across 21 categories
+2026-10-12 03:46:16,262 INFO collectors.shopify_apps shopify: 448 app signals, 1 inserted
+2026-10-12 03:46:16,708 INFO collectors.stackexchange stackexchange opendata: 0 new questions, 0 inserted
+2026-10-12 03:46:24,013 INFO collectors.techcrunch techcrunch: 60 items, 2 inserted
+2026-10-12 03:46:31,580 INFO collectors.github github_rising: 50 repos (created<90d, stars>500)
+2026-10-12 03:46:38,553 INFO collectors.github github: 53 records, 4 inserted
+2026-10-12 03:48:46,383 INFO collectors.google_trends google_trends: 15 combos, 55 rising queries inserted
+2026-10-12 03:48:50,669 INFO collectors.kaggle_ds kaggle_requests: 37 topics, 0 inserted
+2026-10-12 03:48:54,988 INFO collectors.kaggle_ds kaggle: 76 datasets, 6 inserted
+2026-10-12 03:48:55,460 WARNING collectors.hf_datasets request error (400 Client Error: Bad Request for url: https://huggingface.co/api/datasets?sort=trending&limit=50), retry 1/3
+2026-10-12 03:48:57,106 WARNING collectors.hf_datasets request error (400 Client Error: Bad Request for url: https://huggingface.co/api/datasets?sort=trending&limit=50), retry 2/3
+2026-10-12 03:48:59,670 WARNING collectors.hf_datasets request error (400 Client Error: Bad Request for url: https://huggingface.co/api/datasets?sort=trending&limit=50), retry 3/3
+2026-10-12 03:49:06,512 INFO collectors.hf_datasets hf_datasets: 50 items, 0 inserted
+
+===== NeedRadar collection summary =====
+window: 2026-10-11 .. 2026-10-11
+sam_gov      inserted=     4 skipped=     0 failed=0 requests=4
+usaspending  inserted=     0 skipped=     0 failed=0 requests=1
+appstore     inserted=     0 skipped=     0 failed=0 requests=108
+cfpb         inserted=   456 skipped=     0 failed=0 requests=1
+reddit_rss   inserted=   189 skipped=     0 failed=3 requests=24
+reddit       inserted=     0 skipped=     0 failed=0 requests=0
+freelancer   inserted=     0 skipped=     0 failed=0 requests=0
+indiegogo    inserted=     0 skipped=     0 failed=0 requests=1
+youtube      inserted=     0 skipped=     0 failed=0 requests=0
+news         inserted=    65 skipped=     2 failed=0 requests=15
+appstore_charts inserted=  1188 skipped=     0 failed=0 requests=12
+betalist     inserted=    14 skipped=    38 failed=0 requests=1
+gplay_charts inserted=     0 skipped=     0 failed=12 requests=12
+remotejobs   inserted=    14 skipped=     1 failed=0 requests=3
+shopify_apps inserted=     1 skipped=   447 failed=0 requests=417
+stackexchange inserted=     0 skipped=     0 failed=0 requests=1
+techcrunch   inserted=     2 skipped=    58 failed=0 requests=3
+github       inserted=     4 skipped=    49 failed=0 requests=2
+google_trends inserted=    55 skipped=     0 failed=0 requests=15
+kaggle       inserted=     6 skipped=    70 failed=0 requests=6
+hf_datasets  inserted=     0 skipped=    50 failed=1 requests=1
+--- extract ---
+/Users/jimmy/work/need-radar/extractor/pipeline.py:66: SAWarning: Coercing Subquery object into a select() for use in IN(); please pass a select() construct explicitly
+  q = q.filter(~RawSignal.id.in_(done))
+
+===== extraction summary =====
+total                  150
+rule_p                 104
+llm_ok                 0
+llm_fail               0
+no_p                   46
+skipped                0
+prompt_tokens          0
+completion_tokens      0
+estimated_cost_usd     0.0
+model                  gemma4:e4b
+--- rank ---
+2026-10-12 03:49:07,387 INFO aggregator.pipeline window 2026-09-13..2026-10-11: 12605 signals
+2026-10-12 03:49:12,689 INFO aggregator.pipeline pre-grouped into 2432 clusters (25 canonical topics, 2407 residual)
+2026-10-12 03:49:13,736 INFO aggregator.pipeline 30 merge candidate pairs (residual only) -> LLM arbitration
+2026-10-12 03:50:04,892 INFO aggregator.pipeline LLM approved 30 merges
+2026-10-12 03:53:30,473 INFO aggregator.pipeline filters: 1111 candidates -> 2 survivors, 1109 filtered
+2026-10-12 03:53:56,221 INFO aggregator.pipeline persisted 1111 candidate clusters (run_date=2026-10-12)
+
+===== NeedRadar 存活主题 0 个（最终分排序，榜首=100） =====
+（过滤：候选 1109 → 存活 0｜远程招聘 2 簇已挪至 remote_jobs 报告）
+
+报告已导出: reports/top50_20261012.md
+远程招聘报告: reports/remote_jobs_20261012.md（2 簇）
+LLM 调用: 10 次, tokens: 7758+15653
+===== done 2026-10-12 03:53:56 =====

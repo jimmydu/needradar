@@ -449,7 +449,10 @@ def run(session, weeks=4, use_llm=True, dry_run=False, run_date=None):
         if low_hit:
             payer_val, payer_note = 0.4, f"买单者疑似自建型用户（{low_hit}）"
         dev_hit = next((k for k in payer.DEV_TOOL_PAYER_CAP if k in payer_text), None)
-        if dev_hit and payer_val > 0.35:
+        # github_issues 消费者产品 issue（raw.consumer_product）不受 dev-tool 封顶误伤
+        is_consumer_product = (set(st["sources"]) == {"github_issues"} and any(
+            raw.get("consumer_product") for _, _, raw in members))
+        if dev_hit and payer_val > 0.35 and not is_consumer_product:
             payer_val, payer_note = 0.35, f"开发者/OSS 周边工具（{dev_hit}），企业托管豁免需 LLM 论证"
         npa_hit = next((k for k in payer.NON_PAYING_AUDIENCE if k in payer_text), None)
         if npa_hit and payer_val > 0.35:

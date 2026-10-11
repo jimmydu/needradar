@@ -26,12 +26,21 @@ INTERVAL_TOKEN = 2.0
 MAX_RETRIES = 3
 RISING_MIN_STARS = 500
 RISING_MAX_AGE_DAYS = 90
-ISSUE_MIN_REACTIONS = 5
-SEED_POPULAR_REPOS = ["microsoft/vscode", "ollama/ollama", "n8n-io/n8n",
-                      "langchain-ai/langchain", "immich-app/immich",
-                      "supabase/supabase", "actualbudget/actual",
-                      "coollabsio/coolify", "firecrawl/firecrawl",
-                      "browser-use/browser-use"]
+ISSUE_MIN_REACTIONS = 3  # 终端产品 issue 投票分散，阈值从 5 降到 3
+CONSUMER_REPOS_FILE = os.environ.get(
+    "GITHUB_CONSUMER_REPOS_FILE", "./collectors/github_consumer_repos.txt")
+
+
+def load_consumer_repos(path=CONSUMER_REPOS_FILE):
+    """终端用户型开源产品清单（2026-10-12 改造：开发框架全部撤出监控）。
+    Discussions 暂缓（GraphQL 需 PAT 且信号密度低）。"""
+    repos = []
+    with open(path) as f:
+        for line in f:
+            line = line.split("#")[0].strip()
+            if line:
+                repos.append(line.split()[0])
+    return repos
 PAIN_WORDS = ("please add", "support", "doesn't work", "doesnt work",
               "frustrating", "feature request", "enhancement", "broken",
               "missing", "would be great", "wish")
@@ -149,10 +158,15 @@ def collect(date_from, date_to, session):
     log.info("github_rising: %d repos (created<90d, stars>%d)", len(rising),
              RISING_MIN_STARS)
 
-    # channel 2: pain issues on rising + seed popular repos
-    repo_list = list(dict.fromkeys(rising + state.get("pending_repos", [])
-                                   + SEED_POPULAR_REPOS))[:12]
-    done = state.get("done_issue_repos", [])
+    # channel 2: pain issues on consumer-facing OSS products only
+    # (dev-framework repos removed 2026-10-12: developer pain hits the
+    # payer cap; consumer products are ordinary-user pain)
+    repo_list = load_consumer_repos()
+    # done 清单只在当天限流断点续采时有意义，跨天重新全扫（拿新 issue）
+    if state.get("done_date") != date.today().isoformat():
+        state["done_issue_repos"] = []
+        state["done_date"] = date.today().isoformat()
+    done = state["done_issue_repos"]
     for repo in repo_list:
         if repo in done:
             continue
@@ -176,6 +190,7 @@ def collect(date_from, date_to, session):
                 "raw_json": json.dumps({
                     "repo": repo, "reactions_plus1": reactions,
                     "labels": labels, "comments": it.get("comments"),
+                    "consumer_product": True,  # 消费者痛点，豁免 dev-tool payer 封顶
                 }, ensure_ascii=False),
             })
         done.append(repo)
