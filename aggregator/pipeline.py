@@ -174,6 +174,10 @@ def load_window_members(session, weeks=4, window_end=None):
         # chart snapshots are market-direction evidence, not themes themselves
         if s.source == "appstore_charts":
             continue
+        # 题材雷达源（供给侧/趋势语义，非痛点需求）：HF 数据集（AI 圈供给侧）
+        # 与 Google Trends 上升查询——只监控簇生长，不上需求主榜
+        if s.source in ("hf_datasets", "google_trends"):
+            continue
         # prefilter-skipped rows with no rule P-level are dead for clustering
         if getattr(e, "skip_reason", None) and e.p_level is None:
             continue
