@@ -11,7 +11,7 @@ from datetime import date, datetime, timedelta
 import requests
 
 from aggregator import barrier as barrier_mod
-from aggregator import filtering, fit, scoring
+from aggregator import filtering, fit, payer, scoring
 from aggregator.clustering import cluster_signals, cluster_tokens, find_merge_candidates
 from storage import Cluster, Extraction, RawSignal
 
@@ -281,6 +281,38 @@ def _rule_entry_point(r):
     return f"「{kw}」不适合纯软件切入，可做比价/投标信息聚合等周边工具"
 
 
+def _payer_arbitrate(results, usage, batch=15):
+    """LLM scores payer_quality in place; notes tagged with model."""
+    from extractor import llm as llm_mod
+    model = (llm_mod.resolve_config("light") or (None, "unknown", None))[1]
+    for start in range(0, len(results), batch):
+        chunk = results[start:start + batch]
+        lines = []
+        for n, r in enumerate(chunk, 1):
+            lines.append(f"{n}. 关键词: {', '.join(r['keywords'][:8])}｜"
+                         f"代表痛点: {r['summary'][:120]}｜切入点: {r.get('entry_point') or '-'}")
+        try:
+            parsed, ptok, ctok = _chat_json(payer.PAYER_SYSTEM, "\n".join(lines))
+            usage["calls"] += 1
+            usage["prompt_tokens"] += ptok
+            usage["completion_tokens"] += ctok
+            by_id = {m.get("id"): m for m in parsed.get("payers", [])}
+            for n, r in enumerate(chunk, 1):
+                m = by_id.get(n)
+                if not m:
+                    continue
+                try:
+                    val = float(m.get("payer_quality"))
+                except (TypeError, ValueError):
+                    continue
+                if 0 <= val <= 1:
+                    r["payer_quality"] = round(val, 3)
+                    note = m.get("note")
+                    r["payer_note"] = f"[{model}] {note}" if note else f"[{model}]"
+        except Exception as e:
+            log.warning("payer arbitration batch failed: %s", e)
+
+
 def _llm_entry_points(results, usage, batch=25):
     for start in range(0, len(results), batch):
         chunk = results[start:start + batch]
@@ -341,8 +373,9 @@ def run(session, weeks=4, use_llm=True, dry_run=False, run_date=None):
     # cross-run barrier verdicts: canonical topic names are stable, so a
     # verdict arbitrated once (e.g. by kimi) is inherited by later runs and
     # only never-seen clusters go back to the LLM
-    from storage import BarrierVerdict
+    from storage import BarrierVerdict, PayerVerdict
     verdicts = {v.name: v for v in session.query(BarrierVerdict).all()}
+    payer_verdicts = {v.name: v for v in session.query(PayerVerdict).all()}
 
     results = []
     excluded_big = []  # evidence-rich themes below the P3 payment-intent bar
@@ -368,6 +401,16 @@ def run(session, weeks=4, use_llm=True, dry_run=False, run_date=None):
             barrier_val = min(barrier_val, v.barrier) if barrier_capped else v.barrier
             barrier_note = v.note or barrier_note
             verdicted = True
+        # payer quality: neutral default, rule cap for self-builder audiences
+        # (cluster text only), verdicts inherited by name
+        payer_val, payer_note, payer_verdicted = 0.6, "默认中性（未裁决）", False
+        payer_text = (" ".join(kws) + " " + (reps[0] if reps else "")).lower()
+        low_hit = next((k for k in payer.PAYER_LOW if k in payer_text), None)
+        if low_hit:
+            payer_val, payer_note = 0.4, f"买单者疑似自建型用户（{low_hit}）"
+        pv = payer_verdicts.get(name)
+        if pv and pv.score is not None:
+            payer_val, payer_note, payer_verdicted = pv.score, pv.note or payer_note, True
         results.append({
             "cluster": members, "topic": topic, "stats": st, **wps,
             "confidence": conf, "accessibility": acc,
@@ -376,7 +419,9 @@ def run(session, weeks=4, use_llm=True, dry_run=False, run_date=None):
             "barrier_note": barrier_note,
             "barrier_rule": barrier_val,
             "barrier_capped": barrier_capped, "barrier_verdicted": verdicted,
-            "final_score": round(wps["wps"] * conf * acc * fit_val * barrier_val, 4),
+            "payer_quality": payer_val, "payer_note": payer_note,
+            "payer_verdicted": payer_verdicted,
+            "final_score": round(wps["wps"] * conf * acc * fit_val * barrier_val * payer_val, 4),
             "name": name,
             "summary": (f"{topic}：{reps[0]}" if topic and reps else
                         (topic or (reps[0] if reps else "、".join(kws[:3])))),
@@ -394,12 +439,15 @@ def run(session, weeks=4, use_llm=True, dry_run=False, run_date=None):
         ambiguous_b = [r for r in results[:120]
                        if r["barrier"] >= 0.45 and not r.get("barrier_verdicted")]
         _barrier_arbitrate(ambiguous_b, usage)
+        _payer_arbitrate(
+            [r for r in results[:120] if not r.get("payer_verdicted")], usage)
         for r in results:
             # rule caps are a hard floor: the LLM may lower but never raise them
             if r.get("barrier_capped") and r["barrier_method"] == "llm":
                 r["barrier"] = min(r["barrier_rule"], r["barrier"])
             r["final_score"] = round(r["wps"] * r["confidence"] * r["accessibility"]
-                                     * r["software_fit"] * r["barrier"], 4)
+                                     * r["software_fit"] * r["barrier"]
+                                     * r["payer_quality"], 4)
         # persist new verdicts for cross-run inheritance
         from datetime import datetime as _dt
         from extractor import llm as llm_mod
@@ -407,6 +455,11 @@ def run(session, weeks=4, use_llm=True, dry_run=False, run_date=None):
             if r["barrier_method"] == "llm" and not r.get("barrier_verdicted"):
                 session.merge(BarrierVerdict(
                     name=r["name"], barrier=r["barrier"], note=r["barrier_note"],
+                    model=(llm_mod.resolve_config("light") or (None, None, None))[1],
+                    run_date=run_date, updated_at=_dt.utcnow()))
+            if not r.get("payer_verdicted"):
+                session.merge(PayerVerdict(
+                    name=r["name"], score=r["payer_quality"], note=r["payer_note"],
                     model=(llm_mod.resolve_config("light") or (None, None, None))[1],
                     run_date=run_date, updated_at=_dt.utcnow()))
         session.commit()
@@ -446,6 +499,7 @@ def run(session, weeks=4, use_llm=True, dry_run=False, run_date=None):
                 software_fit=r["software_fit"], fit_method=r["fit_method"],
                 entry_point=r.get("entry_point"),
                 barrier=r["barrier"], barrier_note=r["barrier_note"],
+                payer_quality=r["payer_quality"], payer_note=r["payer_note"],
                 filtered_reason=r["filtered_reason"],
                 window_start=window_start, window_end=window_end,
             ))

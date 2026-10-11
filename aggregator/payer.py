@@ -1,0 +1,26 @@
+"""Payer-quality scoring (0-1): who pays, and will they actually pay?
+
+Independent dimension from barrier (can it be built) and fit (can software
+address it): a demand whose only buyers are broke self-builders is not a
+business. Rule cap for obvious self-builder audiences; LLM verdicts persist
+in payer_verdicts and are inherited across runs by topic name.
+"""
+
+# signals that the likely buyer is a self-builder (cap 0.4). Applied ONLY to
+# the cluster summary/keywords text, never to member-signal text — a post
+# from r/selfhosted is not automatically a selfhoster customer.
+PAYER_LOW = {
+    "indie hacker", "side project", "self-hosted", "selfhosted",
+    "open source alternative", "个人开发者", "副业项目", "自建", "爱好者",
+}
+
+PAYER_SYSTEM = """你是独立开发者商业分析员。给定需求主题（关键词 + 代表性痛点 + 切入点），
+评估该主题切入点产品的「付费对象质量」payer_quality（0.0-1.0，越高=买单者越有预算和付费意愿）：
+(a) 客户是个人开发者/爱好者/学生 → 0.2-0.4（付费意愿低，且能自己抄一个工具而不付钱）；
+(b) 客户是普通消费者且无强付费场景 → 0.3-0.5；
+(c) 客户是有预算的小商家/创作者/企业，且产品带持续数据沉淀或嵌入工作流
+    （客户自建=长期维护负担，更可能付费）→ 0.6-0.8；
+(d) 企业级预算 + 强切换成本 → 0.8-1.0。
+注意区分「信号发出者」和「买单者」：Reddit 上抱怨的开发者不一定是客户——
+如果产品的合理买家是有预算的商家，按买家评。
+输出 JSON：{"payers": [{"id": 序号, "payer_quality": 0.0到1.0, "note": "一句话说明买单者与付费逻辑（中文）"}, ...]}。"""

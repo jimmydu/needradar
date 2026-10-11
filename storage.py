@@ -85,6 +85,8 @@ class Cluster(Base):
     filtered_reason = Column(Text)
     barrier = Column(Float)
     barrier_note = Column(Text)
+    payer_quality = Column(Float)
+    payer_note = Column(Text)
     window_start = Column(DateTime)
     window_end = Column(DateTime)
     created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
@@ -97,6 +99,18 @@ class BarrierVerdict(Base):
 
     name = Column(String(128), primary_key=True)
     barrier = Column(Float)
+    note = Column(Text)
+    model = Column(String(64))
+    run_date = Column(String(10))
+    updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+
+
+class PayerVerdict(Base):
+    """Cross-run payer-quality verdicts, keyed by stable cluster name."""
+    __tablename__ = "payer_verdicts"
+
+    name = Column(String(128), primary_key=True)
+    score = Column(Float)
     note = Column(Text)
     model = Column(String(64))
     run_date = Column(String(10))
@@ -148,7 +162,9 @@ def _migrate(engine):
                      ("entry_point", "ALTER TABLE clusters ADD COLUMN entry_point TEXT"),
                      ("barrier", "ALTER TABLE clusters ADD COLUMN barrier FLOAT"),
                      ("barrier_note", "ALTER TABLE clusters ADD COLUMN barrier_note TEXT"),
-                     ("filtered_reason", "ALTER TABLE clusters ADD COLUMN filtered_reason TEXT")):
+                     ("filtered_reason", "ALTER TABLE clusters ADD COLUMN filtered_reason TEXT"),
+                     ("payer_quality", "ALTER TABLE clusters ADD COLUMN payer_quality FLOAT"),
+                     ("payer_note", "ALTER TABLE clusters ADD COLUMN payer_note TEXT")):
         if col not in ccols:
             with engine.begin() as conn:
                 conn.execute(text(ddl))

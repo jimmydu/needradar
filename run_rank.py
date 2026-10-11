@@ -41,7 +41,8 @@ def render_report(survivors, filtered, excluded_big, usage, weeks, run_date):
                 f"- 置信度：{r['confidence']}｜可进入性：{r['accessibility']}",
                 fit,
                 f"- 门槛高度：**{r['barrier']}**（{r['barrier_method']}）— {r['barrier_note']}",
-                f"- **最终分：{r['final_score']}**（= WPS × 置信度 × 可进入性 × 代码可行性 × 门槛高度）",
+                f"- 付费对象：**{r['payer_quality']}** — {r['payer_note']}",
+                f"- **最终分：{r['final_score']}**（= WPS × 置信度 × 可进入性 × 代码可行性 × 门槛高度 × 付费对象质量）",
                 f"- 切入点：{r['entry_point']}",
                 "- 竞品：" + ("、".join(r["competitors"]) if r.get("competitors") else "待补充（LLM 不可用或未识别）"),
                 f"- 证据：{st['n']} 条信号，来源 {json.dumps(dict(st['sources']), ensure_ascii=False)}，"
@@ -65,12 +66,15 @@ def render_report(survivors, filtered, excluded_big, usage, weeks, run_date):
         f"# NeedRadar Top {n} 需求榜单（{run_date}）",
         "",
         f"窗口：过去 {weeks} 周滚动｜主榜为硬过滤后存活主题，按 最终分 = WPS × 置信度 × 可进入性 × "
-        "代码可行性 × 门槛高度 排序；附纯 WPS 榜 Top 20（§9.5）与已过滤清单",
+        "代码可行性 × 门槛高度 × 付费对象质量 排序；附纯 WPS 榜 Top 20（§9.5）与已过滤清单",
         "",
         f"过滤统计：候选 {n + len(filtered)} 个 → 剔除 {len(filtered)} 个 → 存活 {n} 个。"
         + "；".join(f"{k} {v}" for k, v in reason_stats.most_common()),
         "",
     ]
+    if n == 0:
+        lines += ["**本轮无存活主题**——全部候选均被门槛/付费对象等判据过滤，"
+                  "下方「已过滤清单」供人工复核复活。", ""]
     lines += section(survivors, f"主榜 Top {n}（最终分）")
     lines += section(by_wps, "纯 WPS 榜 Top 20（存活主题内）")
     lines += ["## 已过滤清单（可人工复核复活）", ""]
@@ -126,6 +130,7 @@ def main():
               f"conf={r['confidence']:.2f} acc={r['accessibility']:.2f} "
               f"fit={r['software_fit']:.2f}({r['fit_method']}) "
               f"bar={r['barrier']:.2f}({r['barrier_method']}) "
+              f"payer={r['payer_quality']:.2f} "
               f"P{st['p_max']} n={st['n']} src={st['n_sources']} | {r['summary'][:60]}")
     print(f"（过滤：候选 {len(survivors) + len(filtered)} → 存活 {len(survivors)}）")
 
