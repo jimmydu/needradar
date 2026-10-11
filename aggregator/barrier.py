@@ -76,6 +76,28 @@ COLD_START = {
     "marketplace", "platform for", "investors", "crowdfunding platform",
     "two-sided", "双边", "平台撮合", "投资人对接", "撮合",
 }
+
+# 横向吸收者：平台原生功能或横向巨头纵向覆盖过的品类。缝隙扫描发现的
+# Shopify 细分品类必须过这道"横向吸收检查"——被平台原生/横向 incumbent
+# 纵向吸收的缝隙是假缝隙（与判据 #5 头部垄断同级封顶）。
+INCUMBENT_ABSORBER = {
+    "shopify native", "shopify 原生", "shopify checkout", "stripe", "klaviyo",
+    "omnisend", "avalara", "stripe tax", "stripe radar", "signifyd",
+    "feedonomics", "channeladvisor", "back in stock", "gorgias", "reconvert",
+}
+
+# manual_user 主品类 veto 向下传播：子品类簇名 → 主品类 verdict 名。
+# 只传播明确否决过的主品类，不存在的父裁决不影响子簇。
+VETO_PARENT_MAP = {
+    "shopify·marketing-and-conversion-upsell-and-bundles": "shopify·marketing",
+    "shopify·marketing-and-conversion": "shopify·marketing",
+    "shopify·marketing-and-conversion-marketing-email-marketing": "shopify·marketing",
+    "shopify·marketing-and-conversion-social-trust-product-reviews": "shopify·marketing",
+    "shopify·store-design-internationalization-currency-and-translation": "shopify·store-design",
+    "shopify·store-design-site-optimization-seo": "shopify·store-design",
+    "shopify·orders-and-shipping-shipping-solutions-shipping": "shopify·orders-and-shipping",
+    "shopify·sales-channels-selling-online-marketplaces": "shopify·sales-channels",
+}
 INFO_AGG = {"聚合", "比价", "提醒", "monitor", "tracking", "alert", "aggregator",
             "comparison", "比价", "信息聚合"}
 
@@ -169,6 +191,11 @@ def rule_barrier(members, stats):
         score = min(score, 0.4)
         capped = True
         notes.append("冷启动：双边网络效应/BD 关系/流量采买，无分发优势难存活")
+    # 横向吸收检查：平台原生功能/横向 incumbent 纵向覆盖的品类是假缝隙
+    if _hits(text, INCUMBENT_ABSORBER):
+        score = min(score, 0.35)
+        capped = True
+        notes.append("横向吸收：品类被平台原生功能或横向巨头纵向覆盖，假缝隙")
     return score, "rule", "；".join(notes) if notes else "低门槛", capped
 
 

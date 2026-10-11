@@ -404,6 +404,12 @@ def run(session, weeks=4, use_llm=True, dry_run=False, run_date=None):
         name = topic or "、".join(kws[:3])
         verdicted = False
         v = verdicts.get(name)
+        if v is None:
+            # 主品类 veto 向下传播：子品类簇继承父裁决（仅 manual_user）
+            parent = barrier_mod.VETO_PARENT_MAP.get(name)
+            pv_ = verdicts.get(parent) if parent else None
+            if pv_ is not None and pv_.model == "manual_user":
+                v = pv_
         if v and v.barrier is not None:
             # rule caps stay a hard floor; otherwise inherit the verdict
             barrier_val = min(barrier_val, v.barrier) if barrier_capped else v.barrier
