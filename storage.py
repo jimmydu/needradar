@@ -53,7 +53,22 @@ class Extraction(Base):
     completion_tokens = Column(Integer, default=0)
     llm_raw = Column(Text)
     skip_reason = Column(Text)  # 预过滤原因（extractor/prefilter.py）；非空即跳过 LLM/聚类
+    ma_json = Column(Text)      # 并购三要素 {"acquirer","acquiree","domain"}（新闻并购信号）
     extracted_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+
+
+class Watchlist(Base):
+    """收购余波监控清单：被收购产品名（用户抱怨涨价/停更/关停是高价值痛点）。
+    由并购新闻的三要素抽取填充；定向加强监控（reddit/appstore 权重）是下一步。"""
+    __tablename__ = "watchlist"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(255), nullable=False)
+    acquirer = Column(String(255))
+    domain = Column(String(255))
+    source_signal_id = Column(Integer)
+    first_seen = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    note = Column(Text)
 
 
 class Cluster(Base):
@@ -160,6 +175,9 @@ def _migrate(engine):
     if "skip_reason" not in ecols:
         with engine.begin() as conn:
             conn.execute(text("ALTER TABLE extractions ADD COLUMN skip_reason TEXT"))
+    if "ma_json" not in ecols:
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE extractions ADD COLUMN ma_json TEXT"))
     ccols = {c["name"] for c in inspect(engine).get_columns("clusters")}
     for col, ddl in (("software_fit", "ALTER TABLE clusters ADD COLUMN software_fit FLOAT"),
                      ("fit_method", "ALTER TABLE clusters ADD COLUMN fit_method VARCHAR(16)"),

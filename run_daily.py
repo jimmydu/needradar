@@ -12,7 +12,7 @@ from collectors import (appstore, appstore_charts, betalist, cfpb, freelancer,
                         github, google_trends, googleplay_charts, hf_datasets,
                         indiegogo, kaggle_ds, kickstarter, news_rss, reddit,
                         reddit_rss, remotejobs, sam_gov, shopify_apps,
-                        stackexchange, usaspending, youtube)
+                        stackexchange, techcrunch, usaspending, youtube)
 from storage import get_session
 
 log = logging.getLogger(__name__)
@@ -35,6 +35,7 @@ COLLECTORS = [
     ("remotejobs", remotejobs),
     ("shopify_apps", shopify_apps),
     ("stackexchange", stackexchange),
+    ("techcrunch", techcrunch),
     ("github", github),
     ("google_trends", google_trends),
     ("kaggle", kaggle_ds),

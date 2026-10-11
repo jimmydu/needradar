@@ -135,6 +135,7 @@
 |---|---|---|---|
 | Freelancer 研究类查询 | 官方 API（复用现有 key 机制） | P4 | data collection / lead list / market research 等词表搜索；雇人手工汇编数据=数据平台买单证据 |
 | GitHub | 官方 REST search API（免 token 10 次/分钟，可选只读 PAT 提速） | P3 | 双通道：飙升仓库（成功样本，抄成功者供血）+ 高赞痛点 issue（👍 加权）；Polymarket 明确不接；issue label 词表各 repo 不一，痛点词客户端过滤（2026-10-11 实测教训） |
+| 并购新闻 | Google News 并购查询词 + TechCrunch 标签 RSS（startups/acquisitions/ma，免认证） | 题材雷达 | 方向验证信号不进痛点主榜；e4b 抽取三要素（收购方/被收购方/领域）落 extractions.ma_json；被收购产品名入 `watchlist` 表做余波监控（涨价/停更/关停抱怨是高价值痛点，定向加强监控为下一步） |
 | Reddit 数据求源版 | RSS（r/datasets、r/opendata、r/datarequests） | P2–P3 | 复用 reddit_rss 采集器 |
 | Stack Exchange OpenData | 官方 API 免 key（300 次/天配额，增量+状态文件） | P3 | 投票数=需求强度；opendata 站流量小 |
 | Google Trends | pytrends 非官方接口，每日一次状态文件限频 | 辅助 | 词根×行业单词查询（组合查询实测零召回）；pytrends 与 urllib3 2.x 有兼容坑（retries 参数勿传） |

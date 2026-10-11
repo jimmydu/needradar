@@ -21,6 +21,7 @@ This repository contains the data collection layer. All collectors use **officia
 | Google Trends | pytrends (unofficial, daily-capped) | Rising queries around data/research verticals |
 | Kaggle | Official API (`~/.kaggle/kaggle.json`) | 热门数据集=供给侧（题材雷达不上主榜）；`kaggle_requests` 论坛请求帖=需求侧（上主榜） |
 | GitHub | Official REST search API（无 token 10 次/分钟；`GITHUB_TOKEN` 只读 PAT 提速） | 飙升仓库（成功样本）+ 高赞痛点 issue（👍=需求强度） |
+| TechCrunch + M&A queries | 标签 RSS 免认证（startups/acquisitions/ma）+ Google News 并购词 | 并购方向验证（题材雷达不上主榜）；三要素抽取 → watchlist 余波监控 |
 | Hugging Face Datasets | Public Hub API (no key) | Trending/most-downloaded datasets (AI circle) |
 | Freelancer research queries | Official API (existing key) | Paid manual data assembly = data-platform demand |
 | Google News | RSS keyword search (no auth) | Trigger events: policy changes, price hikes, shortages, class-action settlements, shutdowns |

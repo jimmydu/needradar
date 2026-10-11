@@ -182,6 +182,13 @@ def load_window_members(session, weeks=4, window_end=None):
         # kaggle_requests 源（论坛数据集请求帖），不进此排除
         if s.source == "kaggle":
             continue
+        # 并购新闻是题材雷达"方向验证"信号（2026-10-11 定稿），不进痛点主榜：
+        # techcrunch 源整体排除；news 源仅排除触发类型为并购的条目，
+        # 其余新闻触发事件簇维持原状（news: 桶进榜）
+        if s.source == "techcrunch":
+            continue
+        if s.source == "news" and (getattr(e, "trigger_type", "") or "").startswith("并购"):
+            continue
         # prefilter-skipped rows with no rule P-level are dead for clustering
         if getattr(e, "skip_reason", None) and e.p_level is None:
             continue

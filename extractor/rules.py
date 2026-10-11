@@ -37,6 +37,9 @@ TRIGGER_PATTERNS = [
     ("服务关停→迁移替代", re.compile(
         r"\b(shuts? down|shutting down|discontinued|sunsetting|end of life|"
         r"no longer available|winding down)\b|关停|下线|停止服务", re.I)),
+    ("并购→方向验证", re.compile(
+        r"\b(acquires?|acquired by|acquisition|merger|buys|bought|"
+        r"takeover|并购|收购)\b", re.I)),
 ]
 
 

@@ -3,6 +3,7 @@ text-bearing sources under a per-source cost policy.
 """
 import json
 import logging
+import os
 import time
 from datetime import datetime
 
@@ -69,6 +70,42 @@ def candidates(session, source=None, limit=None, force=False):
     return q.all()
 
 
+MA_SYSTEM = """你是并购新闻信息抽取器。从新闻标题/摘要中抽取三要素，输出 JSON：
+{"acquirer": "收购方公司名（未知为空字符串）",
+ "acquiree": "被收购方/产品名（未知为空）",
+ "domain": "被收购方所在领域/产品形态（如 客服SaaS/招聘平台/数据分析，未知为空）"}
+只输出 JSON，禁止编造。"""
+
+
+def extract_ma(signal, timeout=None):
+    """M&A 3-field extraction for trigger_type='并购' news signals."""
+    import requests as rq
+    from extractor import llm as llm_mod
+    cfg = llm_mod.resolve_config("light")
+    if not cfg:
+        return None
+    base, model, api_key = cfg
+    timeout = timeout or int(os.environ.get("OPENAI_TIMEOUT", "180"))
+    resp = rq.post(
+        f"{base}/chat/completions",
+        headers={"Authorization": f"Bearer {api_key}"},
+        json={
+            "model": model,
+            "messages": [
+                {"role": "system", "content": MA_SYSTEM},
+                {"role": "user", "content": f"标题: {signal.title or ''}\n摘要: {(signal.description or '')[:1000]}"},
+            ],
+            "temperature": llm_mod.default_temperature(model),
+            "max_tokens": 500,
+            "response_format": {"type": "json_object"},
+        },
+        timeout=timeout,
+    )
+    resp.raise_for_status()
+    body = resp.json()
+    return json.loads(body["choices"][0]["message"]["content"])
+
+
 def extract_batch(session, source=None, limit=None, force=False, dry_run=False, use_llm=True):
     from extractor import prefilter
     stats = {"total": 0, "rule_p": 0, "llm_ok": 0, "llm_fail": 0, "no_p": 0,
@@ -83,12 +120,13 @@ def extract_batch(session, source=None, limit=None, force=False, dry_run=False, 
             "signal_id": sig.id,
             "p_level": rules.rule_p_level(sig),
             "p_method": "rule" if rules.rule_p_level(sig) else "none",
-            "trigger_type": rules.detect_trigger(text) if sig.source == "news" else None,
+            "trigger_type": rules.detect_trigger(text) if sig.source in ("news", "techcrunch") else None,
             "cost_hint": rules.rule_cost_hint(sig),
             "audience": None, "scenario": None, "pain_point": None,
             "urgency": None, "current_solution": None, "alternatives": None,
             "supply_gap": None, "evidence_json": None, "model": None,
             "prompt_tokens": 0, "completion_tokens": 0, "llm_raw": None,
+            "ma_json": None,
             "skip_reason": skip,
             "extracted_at": datetime.utcnow(),
         }
@@ -99,6 +137,24 @@ def extract_batch(session, source=None, limit=None, force=False, dry_run=False, 
 
         if skip:
             stats["skipped"] += 1
+        elif (rec["trigger_type"] or "").startswith("并购") and use_llm and not dry_run:
+            # M&A 三要素抽取（题材雷达方向验证信号，量小成本低）
+            try:
+                ma = extract_ma(sig)
+                if ma and (ma.get("acquirer") or ma.get("acquiree")):
+                    rec["ma_json"] = json.dumps(ma, ensure_ascii=False)
+                    stats["ma_ok"] = stats.get("ma_ok", 0) + 1
+                    if ma.get("acquiree"):
+                        from storage import Watchlist
+                        session.add(Watchlist(
+                            name=ma["acquiree"], acquirer=ma.get("acquirer") or None,
+                            domain=ma.get("domain") or None,
+                            source_signal_id=sig.id,
+                            note="被收购产品余波监控：用户抱怨涨价/停更/关停是高价值痛点"))
+                time.sleep(0.2)
+            except Exception as e:
+                log.warning("MA extract failed for signal %d: %s", sig.id, e)
+                stats["llm_fail"] += 1
         elif use_llm and _needs_llm(sig) and not dry_run:
             try:
                 fields, evidence, model, ptok, ctok, raw = llm.extract_semantics(sig)
