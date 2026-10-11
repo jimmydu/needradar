@@ -14,13 +14,30 @@ from datetime import date, datetime, timedelta
 
 import requests
 
+from storage import RawSignal
+
 log = logging.getLogger(__name__)
 
 BASE = "https://apps.shopify.com"
-CATEGORIES = ["marketing", "sales", "orders-and-shipping",
-              "inventory-management", "store-design", "customer-support"]
-CARD_LIMIT = 40          # per category
+CATEGORIES_INDEX = f"{BASE}/categories"
+# discovered from the index page 2026-10-11; keep the six legacy aliases too
+CATEGORIES = [
+    "finding-products", "finding-products-sourcing-options-dropshipping",
+    "marketing-and-conversion", "marketing-and-conversion-marketing-email-marketing",
+    "marketing-and-conversion-social-trust-product-reviews",
+    "marketing-and-conversion-upsell-and-bundles",
+    "orders-and-shipping", "orders-and-shipping-shipping-solutions-shipping",
+    "sales-channels", "sales-channels-selling-online-marketplaces",
+    "selling-products", "store-design",
+    "store-design-internationalization-currency-and-translation",
+    "store-design-site-optimization-seo", "store-management",
+    "marketing", "sales", "orders-and-shipping", "inventory-management",
+    "store-design", "customer-support",
+]
+PAGES_PER_CATEGORY = 2
+CARD_LIMIT = 40          # per page
 DETAIL_INTERVAL = 0.4
+DETAIL_REFRESH_DAYS = 7
 MAX_RETRIES = 3
 UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36")
@@ -91,24 +108,35 @@ def collect(date_from, date_to, session):
 
     cards = {}  # handle -> (name, category)
     for cat in CATEGORIES:
-        html = _get(f"{BASE}/categories/{cat}")
-        stats["requests"] += 1
-        if not html:
-            stats["failed"] += 1
-            continue
-        for handle, name in _CARD_RE.findall(html)[:CARD_LIMIT]:
-            cards.setdefault(handle, (name, cat))
-        time.sleep(1)
+        for page in range(1, PAGES_PER_CATEGORY + 1):
+            url = f"{BASE}/categories/{cat}" + (f"?page={page}" if page > 1 else "")
+            html = _get(url)
+            stats["requests"] += 1
+            if not html:
+                stats["failed"] += 1
+                continue
+            for handle, name in _CARD_RE.findall(html)[:CARD_LIMIT]:
+                cards.setdefault(handle, (name, cat))
+            time.sleep(1)
     log.info("shopify: %d unique apps across %d categories", len(cards), len(CATEGORIES))
+
+    # skip detail fetch for apps refreshed recently (their raw_json has it all)
+    fresh = {r.source_id for r in session.query(RawSignal).filter_by(source="shopify_apps")
+             if r.fetched_at and (now - r.fetched_at.replace(tzinfo=None)).days < DETAIL_REFRESH_DAYS}
 
     partner_counts = {}
     records = []
     for handle, (name, cat) in cards.items():
-        det = _app_details(handle)
-        stats["requests"] += 1
-        time.sleep(DETAIL_INTERVAL)
-        if not det:
-            continue
+        if handle in fresh:
+            old = session.query(RawSignal).filter_by(
+                source="shopify_apps", source_id=handle).first()
+            det = json.loads(old.raw_json or "{}")
+        else:
+            det = _app_details(handle)
+            stats["requests"] += 1
+            time.sleep(DETAIL_INTERVAL)
+            if not det:
+                continue
         partner = det.get("partner")
         if partner and partner not in partner_counts:
             partner_counts[partner] = _partner_app_count(partner)
