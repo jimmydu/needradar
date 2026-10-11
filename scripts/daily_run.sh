@@ -13,6 +13,8 @@ mkdir -p "$LOGDIR"
 # LLM 轻量档（本地 Ollama，免费）；cron 环境无 shell 配置，显式 export
 export NEEDRADAR_LLM_LIGHT=http://localhost:11434/v1
 export NEEDRADAR_LLM_LIGHT_MODEL=gemma4:e4b
+# Kaggle 用户名（token 本体在 ~/.kaggle/access_token，不入任何文件）
+export KAGGLE_USERNAME=jdujimmy
 
 exec 9>"$LOCK"
 if ! /usr/bin/flock -n 9 2>/dev/null; then
