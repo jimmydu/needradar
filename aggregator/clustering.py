@@ -106,7 +106,8 @@ def canonical_topic(signal, extraction, raw):
     (trigger events), not user-pain evidence — excluded from pain topics so
     headlines don't hijack topic summaries or inflate evidence counts.
     Crowdfunding sources are products, not pain posts — excluded likewise."""
-    if signal.source in ("sam_gov", "usaspending", "news", "kickstarter", "indiegogo"):
+    if signal.source in ("sam_gov", "usaspending", "news", "kickstarter", "indiegogo",
+                         "appstore_indie", "betalist"):
         return None
     text = " ".join(filter(None, [
         extraction.pain_point, signal.title,
@@ -155,6 +156,9 @@ def residual_bucket_key(signal, extraction, raw):
     if src in ("kickstarter", "indiegogo"):
         # crowdfunding products cluster by KS/IGG category
         return f"crowd:{str(raw.get('category') or raw.get('projectType') or 'misc')[:40]}"
+    if src == "appstore_indie":
+        genres = raw.get("genres") or ["misc"]
+        return f"indie:{genres[0]}"
     app = raw.get("app_name") or raw.get("app_id")
     if src == "appstore" and app:
         return f"app:{app}"

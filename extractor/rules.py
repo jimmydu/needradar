@@ -88,6 +88,10 @@ def rule_p_level(signal):
     if source in ("kickstarter", "indiegogo"):
         # crowdfunding with pledged amount = money already paid
         return 5 if signal.amount else 3
+    if source == "appstore_indie":
+        return 4  # indie app with verified grossing rank = proven monetization
+    if source == "betalist":
+        return 3  # launch-stage indie product
     if source == "manual":
         if stype == "众筹预售":
             return 5 if signal.amount else 4

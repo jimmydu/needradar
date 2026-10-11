@@ -135,6 +135,63 @@ def revenue_tier(rank):
     return "<10万美元（粗估）"
 
 
+def emit_indie_signals(session, indies, snap_date):
+    """Convert indie-report results into raw_signals (source='appstore_indie',
+    signal_type='成功样本') so they flow through clustering/ranking. Existing
+    rows get their rank history updated instead of skipped."""
+    from storage import upsert_signals
+
+    now = datetime.utcnow()
+    existing = {r.source_id: r for r in
+                session.query(RawSignal).filter_by(source="appstore_indie").all()}
+    updated = 0
+    records = []
+    for x in indies:
+        info = x["info"]
+        rank = x["rank"]
+        tier = revenue_tier(rank) if rank else "仅品类榜上榜（量级不明）"
+        desc = (f"{info.name}（{info.seller_name}）：小体量高收入 App 样本。"
+                f"畅销总榜 {'#' + str(rank) if rank else '未上榜'}（{tier}），"
+                f"品类 {', '.join(sorted(x['genres']))}，评分 {info.user_rating_count or 0} 条，"
+                f"indie 分 {info.indie_score}（{info.indie_reasons}）。")
+        prev = existing.get(str(x["app_id"]))
+        raw = {
+            "seller": info.seller_name, "rank": rank, "tier": tier,
+            "genres": sorted(x["genres"]), "feeds": sorted(x["feeds"]),
+            "user_rating_count": info.user_rating_count,
+            "indie_score": info.indie_score, "seller_url": info.seller_url,
+            "price": info.price,
+        }
+        if prev:
+            old = json.loads(prev.raw_json or "{}")
+            hist = old.get("rank_history") or {}
+            if rank:
+                hist[snap_date] = rank
+                raw["rank_history"] = hist
+                prev.raw_json = json.dumps(raw, ensure_ascii=False)
+                prev.description = desc
+                prev.fetched_at = now
+                updated += 1
+            continue
+        raw["rank_history"] = {snap_date: rank} if rank else {}
+        records.append({
+            "source": "appstore_indie",
+            "source_id": str(x["app_id"]),
+            "signal_type": "成功样本",
+            "title": f"{info.name} — 小体量高收入独立 App",
+            "description": desc,
+            "amount": None, "naics": None, "state": None,
+            "posted_at": now,
+            "fetched_at": now,
+            "url": f"https://apps.apple.com/us/app/id{x['app_id']}",
+            "rating": None,
+            "raw_json": json.dumps(raw, ensure_ascii=False),
+        })
+    ins, skip = upsert_signals(session, records)
+    log.info("indie signals: %d new, %d rank-updated", ins, updated)
+    return {"inserted": ins, "updated": updated}
+
+
 def main():
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     p = argparse.ArgumentParser(description="Indie top-apps report")
@@ -152,7 +209,8 @@ def main():
         if raw.get("snapshot_date") != snap_date:
             continue
         entries.append({"app_id": raw["app_id"], "title": r.title,
-                        "feed": raw["feed"], "genre": raw["genre"],
+                        "feed": raw.get("feed", "topgrossingapplications"),
+                        "genre": raw.get("genre", "overall"),
                         "rank": raw["rank"], "price": raw.get("price")})
     log.info("snapshot %s: %d chart entries, %d unique apps",
              snap_date, len(entries), len({e["app_id"] for e in entries}))
@@ -179,6 +237,8 @@ def main():
                        "feeds": b["feeds"], "info": info})
     indies.sort(key=lambda x: (x["rank"] is None, x["rank"] or 999, -x["info"].indie_score))
     log.info("indie pass: %d, excluded: %d", len(indies), excluded)
+    sig_stats = emit_indie_signals(session, indies, snap_date)
+    log.info("appstore_indie signals: %s", sig_stats)
 
     today = date.today().isoformat()
     lines = [
