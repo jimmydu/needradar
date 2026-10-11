@@ -84,6 +84,10 @@ def apply_filters(results, usage, use_llm, chat_json):
     survivors, filtered = [], []
     for r in results:
         reason = r.get("filtered_reason")
+        # 用户亲手否决（manual_user ≤0.30 的 payer/barrier 裁决）永久出榜，
+        # 与 veto 簇同待遇：进过滤清单并引用裁决原文
+        if not reason and r.get("manual_veto"):
+            reason = f"用户否决裁决（manual_user）：{r['manual_veto']}"
         if not reason:
             srcs = set(r["stats"]["sources"])
             if srcs and srcs <= CROWD_SOURCES:

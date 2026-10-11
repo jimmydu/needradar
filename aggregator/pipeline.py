@@ -410,6 +410,7 @@ def run(session, weeks=4, use_llm=True, dry_run=False, run_date=None):
     results = []
     excluded_big = []  # evidence-rich themes below the P3 payment-intent bar
     for (key, members), st in zip(clusters, stats_all):
+        manual_veto_notes = []
         if not st["p_max"] or st["p_max"] < 3:
             if st["n"] >= 20:
                 kws, _, topic = _cluster_brief((key, members))
@@ -437,6 +438,9 @@ def run(session, weeks=4, use_llm=True, dry_run=False, run_date=None):
             barrier_val = min(barrier_val, v.barrier) if barrier_capped else v.barrier
             barrier_note = v.note or barrier_note
             verdicted = True
+            # manual_user veto ≤0.30: hard filter out of the board, forever
+            if v.model == "manual_user" and v.barrier <= 0.30:
+                manual_veto_notes.append(v.note)
         # payer quality: neutral default, rule cap for self-builder audiences
         # (cluster text only), verdicts inherited by name
         payer_val, payer_note, payer_verdicted = 0.6, "默认中性（未裁决）", False
@@ -453,6 +457,10 @@ def run(session, weeks=4, use_llm=True, dry_run=False, run_date=None):
         pv = payer_verdicts.get(name)
         if pv and pv.score is not None:
             payer_val, payer_note, payer_verdicted = pv.score, pv.note or payer_note, True
+            if pv.model == "manual_user" and pv.score <= 0.30:
+                manual_veto_notes.append(pv.note)
+        # 用户亲手否决（manual_user ≤0.30）的方向永久出榜，理由可审计
+        manual_veto = "；".join(n for n in manual_veto_notes if n) or None
         results.append({
             "cluster": members, "topic": topic, "stats": st, **wps,
             "confidence": conf, "accessibility": acc,
@@ -463,6 +471,7 @@ def run(session, weeks=4, use_llm=True, dry_run=False, run_date=None):
             "barrier_capped": barrier_capped, "barrier_verdicted": verdicted,
             "payer_quality": payer_val, "payer_note": payer_note,
             "payer_verdicted": payer_verdicted,
+            "manual_veto": manual_veto,
             "final_score": round(wps["wps"] * conf * acc * fit_val * barrier_val * payer_val, 4),
             "name": name,
             "summary": (f"{topic}：{reps[0]}" if topic and reps else
