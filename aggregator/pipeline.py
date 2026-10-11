@@ -57,6 +57,7 @@ def _chat_json(system, user, timeout=None, tier="light"):
             "messages": [{"role": "system", "content": system},
                          {"role": "user", "content": user}],
             "temperature": temperature,
+            "max_tokens": int(os.environ.get("OPENAI_MAX_TOKENS", "4096")),
             "response_format": {"type": "json_object"},
         },
         timeout=timeout,
@@ -234,7 +235,7 @@ def _fit_arbitrate(results, usage, batch=15):
             log.warning("fit arbitration batch failed: %s", e)
 
 
-def _barrier_arbitrate(results, usage, batch=15):
+def _barrier_arbitrate(results, usage, batch=10):
     """LLM re-scores ambiguous barrier values in place. Notes are tagged with
     the model used (e.g. [kimi-k2.7-code-highspeed]) for audit."""
     from extractor import llm as llm_mod
@@ -287,7 +288,7 @@ def _rule_entry_point(r):
     return f"「{kw}」不适合纯软件切入，可做比价/投标信息聚合等周边工具"
 
 
-def _payer_arbitrate(results, usage, batch=15):
+def _payer_arbitrate(results, usage, batch=10):
     """LLM scores payer_quality in place; notes tagged with model."""
     from extractor import llm as llm_mod
     model = (llm_mod.resolve_config("light") or (None, "unknown", None))[1]
@@ -313,13 +314,14 @@ def _payer_arbitrate(results, usage, batch=15):
                     continue
                 if 0 <= val <= 1:
                     r["payer_quality"] = round(val, 3)
+                    r["payer_arbitrated"] = True
                     note = m.get("note")
                     r["payer_note"] = f"[{model}] {note}" if note else f"[{model}]"
         except Exception as e:
             log.warning("payer arbitration batch failed: %s", e)
 
 
-def _llm_entry_points(results, usage, batch=25):
+def _llm_entry_points(results, usage, batch=8):
     for start in range(0, len(results), batch):
         chunk = results[start:start + batch]
         lines = []
@@ -463,7 +465,7 @@ def run(session, weeks=4, use_llm=True, dry_run=False, run_date=None):
                     name=r["name"], barrier=r["barrier"], note=r["barrier_note"],
                     model=(llm_mod.resolve_config("light") or (None, None, None))[1],
                     run_date=run_date, updated_at=_dt.utcnow()))
-            if not r.get("payer_verdicted"):
+            if r.get("payer_arbitrated") and not r.get("payer_verdicted"):
                 session.merge(PayerVerdict(
                     name=r["name"], score=r["payer_quality"], note=r["payer_note"],
                     model=(llm_mod.resolve_config("light") or (None, None, None))[1],
