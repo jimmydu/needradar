@@ -94,6 +94,12 @@ def _cluster_brief(cluster, max_items=3):
     topic = key[6:] if key.startswith("topic:") else None
     if key.startswith("res:crowd:"):
         topic = f"众筹·{key[10:]}"
+    elif key.startswith("res:indie_shopify:"):
+        topic = f"shopify·{key[18:]}"
+    elif key.startswith("res:indie_gp:"):
+        topic = f"gplay·{key[13:]}"
+    elif key.startswith("res:indie:"):
+        topic = f"indie·{key[10:]}"
     return kws, reps, topic
 
 
