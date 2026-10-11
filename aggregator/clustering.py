@@ -110,6 +110,7 @@ def canonical_topic(signal, extraction, raw):
                          "appstore_indie", "betalist", "gplay_indie",
                          "shopify_apps", "freelancer_research", "stackexchange",
                          "google_trends", "kaggle", "hf_datasets",
+                         "github_rising",
                          "remoteok", "remotive", "weworkremotely"):
         return None
     text = " ".join(filter(None, [
@@ -164,6 +165,10 @@ def residual_bucket_key(signal, extraction, raw):
         return f"indie:{genres[0]}"
     if src == "gplay_indie":
         return f"indie_gp:{raw.get('genre') or 'misc'}"
+    if src == "github_rising":
+        return f"gh_rising:{raw.get('language') or 'misc'}"
+    if src == "github_issues":
+        return f"gh_issue:{raw.get('repo') or 'misc'}"
     if src == "shopify_apps":
         return f"indie_shopify:{raw.get('category') or 'misc'}"
     if src == "freelancer_research":

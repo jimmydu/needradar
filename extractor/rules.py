@@ -104,6 +104,8 @@ def rule_p_level(signal):
         return 3  # dataset adoption = data demand proxy
     if source == "betalist":
         return 3  # launch-stage indie product
+    if source == "github_rising":
+        return 3  # fast-rising repo = copy-the-winner feed
     if source == "manual":
         if stype == "众筹预售":
             return 5 if signal.amount else 4

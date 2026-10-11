@@ -25,6 +25,8 @@ LLM_POLICY = {
     # 行业研究/数据平台方向的新源：规则足够（金额/票数/热度），LLM 只给
     # stackexchange（问题正文有真痛点文本）；其余一律规则
     "stackexchange": "always",
+    "github_issues": "always",   # 高赞痛点 issue 走痛点链路（LLM 抽语义）
+    "github_rising": "never",    # 成功样本：结构化字段自解释
     "freelancer_research": "never",
     "google_trends": "never",
     "kaggle": "never",

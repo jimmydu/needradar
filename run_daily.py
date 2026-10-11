@@ -9,7 +9,7 @@ import logging
 from datetime import date, datetime, timedelta
 
 from collectors import (appstore, appstore_charts, betalist, cfpb, freelancer,
-                        google_trends, googleplay_charts, hf_datasets,
+                        github, google_trends, googleplay_charts, hf_datasets,
                         indiegogo, kaggle_ds, kickstarter, news_rss, reddit,
                         reddit_rss, remotejobs, sam_gov, shopify_apps,
                         stackexchange, usaspending, youtube)
@@ -35,6 +35,7 @@ COLLECTORS = [
     ("remotejobs", remotejobs),
     ("shopify_apps", shopify_apps),
     ("stackexchange", stackexchange),
+    ("github", github),
     ("google_trends", google_trends),
     ("kaggle", kaggle_ds),
     ("hf_datasets", hf_datasets),

@@ -12,3 +12,4 @@ kickstarter_state.json
 node_modules/
 trends_state.json
 stackexchange_state.json
+github_state.json

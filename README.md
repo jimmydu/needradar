@@ -20,6 +20,7 @@ This repository contains the data collection layer. All collectors use **officia
 | Stack Exchange OpenData | Official API (no key, 300/day) | Dataset-request questions, votes = demand strength |
 | Google Trends | pytrends (unofficial, daily-capped) | Rising queries around data/research verticals |
 | Kaggle | Official API (`~/.kaggle/kaggle.json`) | Dataset search popularity |
+| GitHub | Official REST search API（无 token 10 次/分钟；`GITHUB_TOKEN` 只读 PAT 提速） | 飙升仓库（成功样本）+ 高赞痛点 issue（👍=需求强度） |
 | Hugging Face Datasets | Public Hub API (no key) | Trending/most-downloaded datasets (AI circle) |
 | Freelancer research queries | Official API (existing key) | Paid manual data assembly = data-platform demand |
 | Google News | RSS keyword search (no auth) | Trigger events: policy changes, price hikes, shortages, class-action settlements, shutdowns |
@@ -81,6 +82,7 @@ uv venv && uv pip install -r requirements.txt   # 或 python3 -m venv .venv && p
 - `REDDIT_SUBS_FILE`：默认 `./reddit_subs.txt`（每行一个 subreddit 名）。
 - `YOUTUBE_API_KEY`：YouTube Data API v3 key。申请：Google Cloud Console → 建项目 → 启用 "YouTube Data API v3" → 凭据 → 创建 API 密钥。免费配额 10,000 单位/天，本采集器每日约用 ~700 单位（6 次 search×100 + 5 次 commentThreads×1）。未配置自动跳过。
 - Kaggle：API token 从 https://www.kaggle.com/settings → Create New API Token 下载 `kaggle.json` 放 `~/.kaggle/kaggle.json`（勿提交仓库）。未配置自动跳过。
+- GitHub：`collectors/github.py` 双通道——飙升仓库（created<90d & stars>500，成功样本）+ 高赞痛点 issue（按 👍 排序、客户端痛点词过滤，label 词表各 repo 不一不能进查询）。无 token 时限速 6s/请求（search 10 次/分钟），403/429 退避 + `github_state.json` 断点续采。可选提速：github.com/settings/tokens 生成只读 PAT 设 `GITHUB_TOKEN` 环境变量（勿提交）。payer 语义：GitHub 簇默认从严（开发者客户 0.2-0.4），仅企业托管版/非开发者产品化空间两种形态豁免（见 payer.py）。
 - `FREELANCER_API_KEY_FILE`：默认 `./freelancer.api.key`（纯文本 token，已在 .gitignore）。也可用 `FREELANCER_ACCESS_TOKEN` 环境变量。
 
 ### Freelancer.com 凭证
