@@ -13,9 +13,23 @@ log = logging.getLogger(__name__)
 
 def _client():
     kjson = os.path.expanduser("~/.kaggle/kaggle.json")
-    if not os.path.exists(kjson):
-        log.warning("kaggle key missing (~/.kaggle/kaggle.json); skipping. "
-                    "Get one: kaggle.com/settings -> Create New API Token")
+    token_file = os.path.expanduser("~/.kaggle/access_token")
+    env_user = os.environ.get("KAGGLE_USERNAME")
+    env_key = os.environ.get("KAGGLE_KEY")
+
+    if os.path.exists(kjson) or (env_user and env_key):
+        pass  # official client handles both
+    elif os.path.exists(token_file) and env_user:
+        # bare-token file: synthesize env credentials for the official client
+        os.environ["KAGGLE_USERNAME"] = env_user
+        os.environ["KAGGLE_KEY"] = open(token_file).read().strip()
+    elif os.path.exists(token_file):
+        log.warning("~/.kaggle/access_token 是裸 token（无 username）；"
+                    "官方客户端需要 username+key 配对，请同时设置 KAGGLE_USERNAME；跳过")
+        return None
+    else:
+        log.warning("kaggle key missing (~/.kaggle/kaggle.json 或 ~/.kaggle/access_token + "
+                    "KAGGLE_USERNAME)；跳过。获取：kaggle.com/settings -> Create New API Token")
         return None
     try:
         from kaggle.api.kaggle_api_extended import KaggleApi
