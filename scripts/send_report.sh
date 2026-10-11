@@ -16,14 +16,20 @@ if [ -z "$REPORT" ]; then
     exit 1
 fi
 
-# 飞书消息不宜过长：标题 + 过滤统计 + 主榜每条的主题摘要
+# 飞书消息不宜过长：标题 + 过滤统计 + 主榜每条的主题摘要 + 远程招聘要点
 RPT_DATE=$(basename "$REPORT" .md | sed 's/top50_//')
+RJ=$(ls -t reports/remote_jobs_*.md 2>/dev/null | head -1)
 {
     echo "📡 NeedRadar 需求榜单 $RPT_DATE"
     echo
     grep "^过滤统计" "$REPORT"
     echo
     awk '/^## 主榜/{f=1;next} /^## /{f=0} f && /^### /{print}' "$REPORT" | sed 's/^### //'
+    if [ -n "$RJ" ]; then
+        echo
+        echo "── 远程招聘趋势（详见 $(basename "$RJ")）──"
+        awk '/^## /{if (++n>4) exit; gsub(/^## /,""); print n". "$0}' "$RJ"
+    fi
     echo
     echo "（完整报告：${REPORT}）"
 } > /tmp/needradar_report_msg.txt

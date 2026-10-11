@@ -506,4 +506,11 @@ def run(session, weeks=4, use_llm=True, dry_run=False, run_date=None):
         session.commit()
         log.info("persisted %d candidate clusters (run_date=%s)", len(results), run_date)
 
-    return survivors, filtered, excluded_big, usage
+    # job postings (employer demand, not user pain) leave the main board and
+    # get their own trend report (reports/remote_jobs_*.md via run_rank)
+    JD_SOURCES = {"remoteok", "remotive", "weworkremotely"}
+    jd = [r for r in survivors
+          if set(r["stats"]["sources"]) and set(r["stats"]["sources"]) <= JD_SOURCES]
+    survivors = [r for r in survivors if r not in jd]
+
+    return survivors, filtered, excluded_big, jd, usage

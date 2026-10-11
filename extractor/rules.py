@@ -92,6 +92,8 @@ def rule_p_level(signal):
         return 4  # indie app with verified grossing rank = proven monetization
     if source == "gplay_indie":
         return 4  # same, Google Play side
+    if source == "shopify_apps":
+        return 4  # shopify-ecosystem tool with proven merchant spend
     if source in ("remoteok", "remotive", "weworkremotely"):
         return 3  # employer demand signal (remote hiring)
     if source == "betalist":

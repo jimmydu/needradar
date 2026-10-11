@@ -18,6 +18,38 @@ def fmt_amount(a):
     return f"${a:,.0f}" if a else "无金额线索"
 
 
+def render_remote_report(jd, run_date):
+    """Remote-work hiring trend report: JD clusters by skill/category/company,
+    salary ranges when present."""
+    lines = [
+        f"# 远程工作招聘趋势（{run_date}）",
+        "",
+        "说明：JD 是雇主需求而非用户痛点，已从需求主榜挪出独立呈现。",
+        "",
+    ]
+    if not jd:
+        lines.append("本轮窗口内无远程招聘信号。")
+        return "\n".join(lines)
+    for rank, r in enumerate(jd, 1):
+        st = r["stats"]
+        salaries = []
+        for s, _, raw in r["cluster"]:
+            if raw.get("salary"):
+                salaries.append(str(raw["salary"]))
+            elif raw.get("salary_min") and raw.get("salary_max"):
+                salaries.append(f"${raw['salary_min']:,}-{raw['salary_max']:,}")
+        lines += [
+            f"## {rank}. {r['summary']}",
+            "",
+            f"- JD 数：{st['n']}，来源 {json.dumps(dict(st['sources']), ensure_ascii=False)}"
+            + (f"，薪资区间：{'；'.join(sorted(set(salaries))[:3])}" if salaries else ""),
+        ]
+        for l in (r.get("links") or [])[:3]:
+            lines.append(f"  - [{l['source']}] {l['title']} — {l['url']}")
+        lines.append("")
+    return "\n".join(lines)
+
+
 def render_report(survivors, filtered, excluded_big, usage, weeks, run_date):
     from collections import Counter
     reason_stats = Counter()
@@ -122,7 +154,7 @@ def main():
     args = p.parse_args()
 
     session = get_session()
-    survivors, filtered, excluded_big, usage = run(
+    survivors, filtered, excluded_big, jd, usage = run(
         session, weeks=args.weeks,
         use_llm=not (args.no_llm or args.dry_run),
         dry_run=args.dry_run)
@@ -137,7 +169,8 @@ def main():
               f"bar={r['barrier']:.2f}({r['barrier_method']}) "
               f"payer={r['payer_quality']:.2f} "
               f"P{st['p_max']} n={st['n']} src={st['n_sources']} | {r['summary'][:60]}")
-    print(f"（过滤：候选 {len(survivors) + len(filtered)} → 存活 {len(survivors)}）")
+    print(f"（过滤：候选 {len(survivors) + len(filtered)} → 存活 {len(survivors)}"
+          f"｜远程招聘 {len(jd)} 簇已挪至 remote_jobs 报告）")
 
     run_date = date.today().isoformat()
     report = render_report(survivors, filtered, excluded_big, usage, args.weeks, run_date)
@@ -147,6 +180,10 @@ def main():
         with open(path, "w") as f:
             f.write(report)
         print(f"\n报告已导出: {path}")
+        rj_path = f"reports/remote_jobs_{run_date.replace('-', '')}.md"
+        with open(rj_path, "w") as f:
+            f.write(render_remote_report(jd, run_date))
+        print(f"远程招聘报告: {rj_path}（{len(jd)} 簇）")
     print(f"LLM 调用: {usage['calls']} 次, tokens: {usage['prompt_tokens']}+{usage['completion_tokens']}")
 
 

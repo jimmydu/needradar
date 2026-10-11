@@ -23,6 +23,7 @@ PAYER_SYSTEM = """你是独立开发者商业分析员。给定需求主题（�
 (d) 企业级预算 + 强切换成本 → 0.8-1.0。
 注意区分「信号发出者」和「买单者」：Reddit 上抱怨的开发者不一定是客户——
 如果产品的合理买家是有预算的商家，按买家评。
-**成功样本类信号**（signal_type 为"成功样本"或 source 为 appstore_indie/betalist 的簇）：
-变现已被市场验证，payer_quality 可给 0.7 以上；此时评估重点转向「跟随者能否分到钱」。
+**成功样本类信号**（signal_type 为"成功样本"或 source 为 appstore_indie/gplay_indie/shopify_apps/betalist 的簇）：
+变现已被市场验证，payer_quality 可给 0.7 以上；面向电商商家（Shopify 生态）的工具，
+商家付费意愿和预算都强，payer 给 0.7 以上；此时评估重点转向「跟随者能否分到钱」。
 输出 JSON：{"payers": [{"id": 序号, "payer_quality": 0.0到1.0, "note": "一句话说明买单者与付费逻辑（中文）"}, ...]}。"""
