@@ -182,6 +182,10 @@ def load_window_members(session, weeks=4, window_end=None):
         # kaggle_requests 源（论坛数据集请求帖），不进此排除
         if s.source == "kaggle":
             continue
+        # github_rising 整源降级题材雷达（2026-10-11 用户裁决：开源周边 payer 死亡）；
+        # github_issues 保留痛点链路，受 payer 开发者词表封顶约束
+        if s.source == "github_rising":
+            continue
         # 并购新闻是题材雷达"方向验证"信号（2026-10-11 定稿），不进痛点主榜：
         # techcrunch 源整体排除；news 源仅排除触发类型为并购的条目，
         # 其余新闻触发事件簇维持原状（news: 桶进榜）
@@ -440,6 +444,12 @@ def run(session, weeks=4, use_llm=True, dry_run=False, run_date=None):
         low_hit = next((k for k in payer.PAYER_LOW if k in payer_text), None)
         if low_hit:
             payer_val, payer_note = 0.4, f"买单者疑似自建型用户（{low_hit}）"
+        dev_hit = next((k for k in payer.DEV_TOOL_PAYER_CAP if k in payer_text), None)
+        if dev_hit and payer_val > 0.35:
+            payer_val, payer_note = 0.35, f"开发者/OSS 周边工具（{dev_hit}），企业托管豁免需 LLM 论证"
+        npa_hit = next((k for k in payer.NON_PAYING_AUDIENCE if k in payer_text), None)
+        if npa_hit and payer_val > 0.35:
+            payer_val, payer_note = 0.35, f"目标用户为无收入群体（{npa_hit}）且有免费替代品"
         pv = payer_verdicts.get(name)
         if pv and pv.score is not None:
             payer_val, payer_note, payer_verdicted = pv.score, pv.note or payer_note, True

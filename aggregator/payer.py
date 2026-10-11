@@ -13,6 +13,20 @@ PAYER_LOW = {
     "indie hacker", "side project", "self-hosted", "selfhosted",
     "open source alternative", "个人开发者", "副业项目", "自建", "爱好者",
 }
+# 元结论（2026-10-11，用户第三次否决同一模式）：开发者/开源生态周边方向
+# payer 整体死亡——词表命中的簇 payer 封顶 0.35；唯一豁免是企业托管/服务版
+# （LLM 裁决时可突破但必须在 note 里说明理由）。
+DEV_TOOL_PAYER_CAP = {
+    "开源", "open source", "open-source", "可视化", "趋势追踪", "性能追踪",
+    "developer tool", "dev tool", "github", "oss", "visualization",
+    "developer", "开源项目",
+}
+
+# 目标用户为无收入群体（艺术家/学生/爱好者/公益）且存在免费替代品
+NON_PAYING_AUDIENCE = {
+    "artist", "musician", "band", "student", "hobbyist", "nonprofit",
+    "艺术家", "音乐人", "乐队", "学生", "爱好者", "公益", "志愿者",
+}
 
 PAYER_SYSTEM = """你是独立开发者商业分析员。给定需求主题（关键词 + 代表性痛点 + 切入点），
 评估该主题切入点产品的「付费对象质量」payer_quality（0.0-1.0，越高=买单者越有预算和付费意愿）：
@@ -25,6 +39,11 @@ PAYER_SYSTEM = """你是独立开发者商业分析员。给定需求主题（�
 如果产品的合理买家是有预算的商家，按买家评。
 **无留存陷阱**：若产品的价值交付是一次性修复（钩子改良、转化率修好客户就退订），
 无法形成持续依赖/复购，payer_quality 判低（0.2-0.3），即使当前痛点真实存在。
+**无收入群体**：目标用户是艺术家/音乐人/学生/爱好者/公益等无收入群体且存在免费替代品
+→ payer 封顶 0.35。
+**开发者/OSS 周边**（元结论：用户已三次否决同一模式）：开源项目可视化/趋势追踪/
+性能追踪/开发者工具方向 payer 整体死亡，封顶 0.35；唯一豁免是明确的企业托管/服务版
+（买单者是公司），突破时必须在 note 说明理由。
 **成功样本类信号**（signal_type 为"成功样本"或 source 为 appstore_indie/gplay_indie/shopify_apps/betalist 的簇）：
 变现已被市场验证，payer_quality 可给 0.7 以上；面向电商商家（Shopify 生态）的工具，
 商家付费意愿和预算都强，payer 给 0.7 以上；此时评估重点转向「跟随者能否分到钱」。

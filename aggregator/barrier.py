@@ -126,6 +126,12 @@ def rule_barrier(members, stats):
         compliance = 0.2
 
     gov_only = set(stats["sources"]) <= GOV_SOURCES
+
+    # 平台主场（2026-10-11）：痛点发生在某平台社区内且诉求指向该平台自身
+    # 能力范围（kaggle 数据请求→kaggle 平台、github issue→该 repo 自身）——
+    # 在 incumbent 主场内找机会没有空间
+    srcs = set(stats["sources"])
+    platform_home = srcs <= {"kaggle_requests"} or srcs <= {"github_issues"}
     if gov_only:
         # government contracting requires a US entity / contractor registration
         # (SAM.gov) and often clearances — the compliance dim must reflect that
@@ -196,6 +202,10 @@ def rule_barrier(members, stats):
         score = min(score, 0.35)
         capped = True
         notes.append("横向吸收：品类被平台原生功能或横向巨头纵向覆盖，假缝隙")
+    if platform_home:
+        score = min(score, 0.35)
+        capped = True
+        notes.append("平台主场：痛点诉求指向平台自身能力，incumbent 主场内无机会")
     return score, "rule", "；".join(notes) if notes else "低门槛", capped
 
 
