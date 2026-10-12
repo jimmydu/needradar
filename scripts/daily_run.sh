@@ -15,6 +15,8 @@ export NEEDRADAR_LLM_LIGHT=http://localhost:11434/v1
 export NEEDRADAR_LLM_LIGHT_MODEL=gemma4:e4b
 # Kaggle 用户名（token 本体在 ~/.kaggle/access_token，不入任何文件）
 export KAGGLE_USERNAME=jdujimmy
+# YouTube Data API key 在 ~/.needradar_secrets（600，不入仓库），launchd 不读 shell profile
+[ -f ~/.needradar_secrets ] && . ~/.needradar_secrets
 
 exec 9>"$LOCK"
 if ! /usr/bin/flock -n 9 2>/dev/null; then
