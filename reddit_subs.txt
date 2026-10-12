@@ -23,3 +23,6 @@ overemployed
 datasets
 opendata
 datarequests
+SomebodyMakeThis
+CryptoCurrency @radar
+defi @radar

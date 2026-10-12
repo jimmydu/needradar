@@ -23,3 +23,8 @@ petition AND (app OR software OR online)
 "x402 protocol"
 "AP2" "agent payments"
 "agent checkout"
+# --- 融资信号（题材雷达，公司/轮次/金额/领域四要素抽取） ---
+"raises Series A"
+"raises Series B"
+"startup funding round"
+"funding round" "million" startup

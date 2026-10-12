@@ -40,6 +40,9 @@ TRIGGER_PATTERNS = [
     ("并购→方向验证", re.compile(
         r"\b(acquires?|acquired by|acquisition|merger|buys|bought|"
         r"takeover|并购|收购)\b", re.I)),
+    ("融资→方向验证", re.compile(
+        r"\b(raises? \$|raising \$|funding round|Series [A-F]|seed round|"
+        r"融资|轮融资|领投)\b", re.I)),
 ]
 
 

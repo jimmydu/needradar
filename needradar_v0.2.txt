@@ -139,6 +139,10 @@
 | Freelancer 研究类查询 | 官方 API（复用现有 key 机制） | P4 | data collection / lead list / market research 等词表搜索；雇人手工汇编数据=数据平台买单证据 |
 | GitHub | 官方 REST search API（免 token 10 次/分钟，可选只读 PAT 提速） | P3 | 2026-10-12 改造：监控对象换成终端用户型开源产品（immich/joplin/cal.com/paperless-ngx 等 30 仓，清单 `collectors/github_consumer_repos.txt`，全部 API 实测 200），开发框架撤出；👍≥3 客户端过滤；飙升仓库整源降级题材雷达不上主榜；消费者 issue 带 consumer_product 标记豁免 dev-tool payer 封顶；Discussions 暂缓（GraphQL 需 PAT 且密度低） |
 | 并购新闻 | Google News 并购查询词 + TechCrunch 标签 RSS（startups/acquisitions/ma，免认证） | 题材雷达 | 方向验证信号不进痛点主榜；e4b 抽取三要素（收购方/被收购方/领域）落 extractions.ma_json；被收购产品名入 `watchlist` 表做余波监控（涨价/停更/关停抱怨是高价值痛点，定向加强监控为下一步） |
+| 并购新闻 | Google News 并购查询词 + TechCrunch 标签 RSS（startups/acquisitions/ma，免认证） | 题材雷达 | 方向验证信号不进痛点主榜；e4b 抽取三要素（收购方/被收购方/领域）落 extractions.ma_json；被收购产品名入 `watchlist` 表做余波监控（涨价/停更/关停抱怨是高价值痛点，定向加强监控为下一步） |
+| Hacker News | Algolia HN Search API 免 key（search_by_date） | P2–P3 | Ask HN 求助帖 + Show HN 帖及评论抱怨（评论通道带父帖标题）；Who is hiring 不碰（招聘已独立管道）；增量状态文件 hackernews_state.json |
+| Reddit 需求创意/币圈 | RSS（r/SomebodyMakeThis、r/AppIdeas、r/lightbulb；r/CryptoCurrency、r/defi 标 @radar） | P2–P3 / 题材雷达 | 需求版预过滤放行（无抱怨词但语义即需求，prefilter DEMAND_SUBS 白名单）；币圈战略约束：**中国监管红线+信任门槛+巨头墙，只监控不出手**，@radar 版 raw_json.radar_only 进监控层不上主榜 |
+| 融资新闻 | Google News 融资查询词（raises Series A/B、startup funding round 等 4 个） | 题材雷达 | 复用并购机制做四要素抽取（公司/轮次/金额/领域，同 extractions.ma_json），不进痛点主榜 |
 | agent 商业协议监控 | Google News 词（agentic commerce / AI agent payments / x402 / AP2 / agent checkout）+ Google Trends 单词 | 题材雷达 | 2026-10-12：用户否决清算平台本体（牌照/金融死门槛），仅监控垂直应用层信号生长，不进痛点主榜 |
 | Reddit 数据求源版 | RSS（r/datasets、r/opendata、r/datarequests） | P2–P3 | 复用 reddit_rss 采集器 |
 | Stack Exchange OpenData | 官方 API 免 key（300 次/天配额，增量+状态文件） | P3 | 投票数=需求强度；opendata 站流量小 |

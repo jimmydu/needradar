@@ -28,12 +28,15 @@ _TAG_RE = re.compile(r"<[^>]+>")
 
 
 def load_subs(path=SUBS_FILE):
+    """Returns [(sub, radar_only)]. '@radar' 后缀的版只做题材雷达监控，
+    不进痛点主榜（币圈：中国监管红线+信任门槛+巨头墙，只监控不出手）。"""
     subs = []
     with open(path) as f:
         for line in f:
             line = line.split("#")[0].strip()
             if line:
-                subs.append(line)
+                radar = "@radar" in line
+                subs.append((line.replace("@radar", "").strip(), radar))
     return subs
 
 
@@ -104,7 +107,7 @@ def collect(date_from, date_to, session):
     now = datetime.utcnow()
     start_dt = datetime.combine(date_from, datetime.min.time())
 
-    for sub in load_subs():
+    for sub, radar_only in load_subs():
         xml_text = _fetch(RSS_URL.format(sub=sub))
         stats["requests"] += 1
         if xml_text is None:
@@ -136,6 +139,7 @@ def collect(date_from, date_to, session):
                     "author": e["author"],
                     "link": e["link"],
                     "flair": e["flair"],
+                    "radar_only": radar_only,
                 }, ensure_ascii=False),
             })
         ins, skip = upsert_signals(session, records)

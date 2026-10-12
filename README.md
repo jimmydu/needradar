@@ -22,6 +22,10 @@ This repository contains the data collection layer. All collectors use **officia
 | Kaggle | Official API (`~/.kaggle/kaggle.json`) | 热门数据集=供给侧（题材雷达不上主榜）；`kaggle_requests` 论坛请求帖=需求侧（上主榜） |
 | GitHub | Official REST search API（无 token 10 次/分钟；`GITHUB_TOKEN` 只读 PAT 提速） | 终端用户型开源产品 issue（消费者痛点，👍=需求强度）+ 飙升仓库（题材雷达） |
 | TechCrunch + M&A queries | 标签 RSS 免认证（startups/acquisitions/ma）+ Google News 并购词 | 并购方向验证（题材雷达不上主榜）；三要素抽取 → watchlist 余波监控 |
+| Hacker News | Algolia HN Search API（免 key） | Ask HN 求助帖 + Show HN 抱怨，增量状态文件 |
+| Reddit 需求创意/币圈 | reddit_rss 管道加版；币圈 @radar 后缀仅监控不上主榜（中国监管红线，战略约束见 PRD） | 需求创意/币圈监控 |
+| 融资新闻 | Google News 词（raises Series A/B 等 4 个），四要素抽取同并购机制 | 题材雷达不上主榜 |
+| YouTube | Data API v3（`YOUTUBE_API_KEY`，申请中）+ 无 key 降级频道 RSS（只采标题） | 痛点视频+评论 |
 | Hugging Face Datasets | Public Hub API (no key) | Trending/most-downloaded datasets (AI circle) |
 | Freelancer research queries | Official API (existing key) | Paid manual data assembly = data-platform demand |
 | Google News | RSS keyword search (no auth) | Trigger events: policy changes, price hikes, shortages, class-action settlements, shutdowns |

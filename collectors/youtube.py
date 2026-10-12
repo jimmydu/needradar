@@ -21,9 +21,17 @@ SEARCH_QUERIES = [
     "looking for an app", "is there an app that", "alternative to",
     "cancel subscription", "too expensive app", "frustrated with",
 ]
+COMMENT_PAIN_WORDS = ("i wish", "is there an app", "frustrating", "frustrated",
+                      "doesn't work", "broken", "too expensive", "hate")
 MAX_COMMENT_VIDEOS = 5
 COMMENTS_PER_VIDEO = 20
 MAX_RETRIES = 3
+# 无 key 降级路径：官方频道 RSS 只采标题（标注 degraded），不进评论
+DEGRADE_CHANNELS = {
+    "UCxIJaCMEptJjxmmQgGFsnCg": "Y Combinator",
+    "UCCjyq_K1Xwfg8Lndy7lKMpA": "TechCrunch",
+    "UCQ1VQj-37kl2yS_VUhfQHsw": "a16z",
+}
 
 
 def _get(path, params, quota):
@@ -45,6 +53,57 @@ def _get(path, params, quota):
     return None
 
 
+def _collect_rss_degraded(date_from, date_to, session, stats):
+    """No-key fallback: official channel RSS, titles only (degraded marker)."""
+    import xml.etree.ElementTree as ET
+    from storage import upsert_signals
+
+    now = datetime.utcnow()
+    start_dt = datetime.combine(date_from, datetime.min.time())
+    records = []
+    for cid, cname in DEGRADE_CHANNELS.items():
+        try:
+            resp = requests.get(
+                f"https://www.youtube.com/feeds/videos.xml?channel_id={cid}",
+                headers={"User-Agent": "needradar/0.1 (research)"}, timeout=30)
+            stats["requests"] += 1
+            if resp.status_code != 200:
+                stats["failed"] += 1
+                continue
+            root = ET.fromstring(resp.text)
+            ns = {"a": "http://www.w3.org/2005/Atom",
+                  "yt": "http://www.youtube.com/xml/schemas/2015"}
+            for e in root.findall("a:entry", ns):
+                vid = e.findtext("yt:videoId", namespaces=ns)
+                title = e.findtext("a:title", namespaces=ns)
+                posted = _parse_dt(e.findtext("a:published", namespaces=ns))
+                if not vid or (posted and posted < start_dt):
+                    continue
+                records.append({
+                    "source": "youtube",
+                    "source_id": f"rss_{vid}",
+                    "signal_type": "post",
+                    "title": f"[{cname}] {title}",
+                    "description": None,
+                    "amount": None, "naics": None, "state": None,
+                    "posted_at": posted, "fetched_at": now,
+                    "url": f"https://www.youtube.com/watch?v={vid}",
+                    "rating": None,
+                    "raw_json": json.dumps({"channel": cname, "degraded": True,
+                                            "note": "无 YOUTUBE_API_KEY，RSS 降级只采标题"},
+                                           ensure_ascii=False),
+                })
+        except Exception as e:
+            log.warning("channel %s failed: %s", cname, e)
+            stats["failed"] += 1
+        time.sleep(1)
+    ins, skip = upsert_signals(session, records)
+    stats["inserted"] = ins
+    stats["skipped"] = skip
+    stats["degraded"] = True
+    return stats
+
+
 def _parse_dt(s):
     try:
         return datetime.fromisoformat(s.replace("Z", "+00:00")).replace(tzinfo=None)
@@ -58,9 +117,10 @@ def collect(date_from, date_to, session):
     stats = {"inserted": 0, "skipped": 0, "failed": 0, "requests": 0}
     api_key = os.environ.get("YOUTUBE_API_KEY")
     if not api_key:
-        log.warning("YOUTUBE_API_KEY not set; skipping youtube source "
-                    "(get a key: Google Cloud Console -> enable YouTube Data API v3 -> create API key)")
-        return stats
+        # 降级路径：官方频道 RSS，只采标题，标注 degraded，不进评论
+        log.warning("YOUTUBE_API_KEY not set; degraded to channel-RSS titles only "
+                    "(key 申请: console.cloud.google.com 建项目 → 启用 YouTube Data API v3 → 创建 API 密钥)")
+        return _collect_rss_degraded(date_from, date_to, session, stats)
 
     now = datetime.utcnow()
     start_dt = datetime.combine(date_from, datetime.min.time())
@@ -111,8 +171,9 @@ def collect(date_from, date_to, session):
         for item in data.get("items", []):
             c = ((item.get("snippet") or {}).get("topLevelComment") or {}).get("snippet") or {}
             cid = item.get("id")
-            if not cid:
-                continue
+            text = (c.get("textDisplay") or "")
+            if not cid or not any(w in text.lower() for w in COMMENT_PAIN_WORDS):
+                continue  # 只留痛点词命中的评论
             records.append({
                 "source": "youtube",
                 "source_id": f"comment_{cid}",

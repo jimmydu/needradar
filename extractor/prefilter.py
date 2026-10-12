@@ -14,13 +14,25 @@ PAIN_WORDS = (
     "卡", "崩", "闪退", "难用", "太贵", "扣费", "退款", "客服", "投诉", "丢失",
 )
 
-LLM_SOURCES = {"appstore", "reddit_rss", "reddit", "manual", "freelancer"}
+LLM_SOURCES = {"appstore", "reddit_rss", "reddit", "manual", "freelancer", "hackernews"}
+
+# 需求创意版：帖子无抱怨词但语义就是需求，预过滤放行
+DEMAND_SUBS = {"somebodymakethis", "appideas", "lightbulb"}
 
 
 def skip_reason(signal):
     """Return a skip reason for high-confidence no-pain signals, else None."""
     if signal.source not in LLM_SOURCES:
         return None
+    raw = {}
+    if signal.raw_json:
+        try:
+            import json as _json
+            raw = _json.loads(signal.raw_json)
+        except ValueError:
+            pass
+    if (raw.get("subreddit") or "").lower() in DEMAND_SUBS:
+        return None  # 需求创意版全部放行
     text = f"{signal.title or ''} {signal.description or ''}".lower().strip()
     if len(text) < 30:
         return "文本过短（<30字符），无痛点可抽"

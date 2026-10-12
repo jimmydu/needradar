@@ -182,6 +182,10 @@ def load_window_members(session, weeks=4, window_end=None):
         # kaggle_requests 源（论坛数据集请求帖），不进此排除
         if s.source == "kaggle":
             continue
+        # reddit @radar 标记版（币圈等监控层）不进痛点主榜
+        _raw = json.loads(s.raw_json) if s.raw_json else {}
+        if _raw.get("radar_only"):
+            continue
         # github_rising 整源降级题材雷达（2026-10-11 用户裁决：开源周边 payer 死亡）；
         # github_issues 保留痛点链路，受 payer 开发者词表封顶约束
         if s.source == "github_rising":
@@ -191,7 +195,7 @@ def load_window_members(session, weeks=4, window_end=None):
         # 其余新闻触发事件簇维持原状（news: 桶进榜）
         if s.source == "techcrunch":
             continue
-        if s.source == "news" and (getattr(e, "trigger_type", "") or "").startswith("并购"):
+        if s.source == "news" and (getattr(e, "trigger_type", "") or "").startswith(("并购", "融资")):
             continue
         # prefilter-skipped rows with no rule P-level are dead for clustering
         if getattr(e, "skip_reason", None) and e.p_level is None:

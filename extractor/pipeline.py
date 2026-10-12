@@ -23,6 +23,7 @@ LLM_POLICY = {
     "reddit": "always",
     "freelancer": "always",
     "manual": "always",
+    "hackernews": "always",  # Ask HN 求助帖/Show HN 抱怨
     "targeted_review": "always",  # 已预筛 ≤3 星
     # 行业研究/数据平台方向的新源：规则足够（金额/票数/热度），LLM 只给
     # stackexchange（问题正文有真痛点文本）；其余一律规则
@@ -77,9 +78,15 @@ MA_SYSTEM = """你是并购新闻信息抽取器。从新闻标题/摘要中抽�
  "domain": "被收购方所在领域/产品形态（如 客服SaaS/招聘平台/数据分析，未知为空）"}
 只输出 JSON，禁止编造。"""
 
+FUNDING_SYSTEM = """你是融资新闻信息抽取器。从新闻标题/摘要中抽取四要素，输出 JSON：
+{"company": "融资公司名（未知为空字符串）",
+ "round": "轮次（如 Seed/Series A/B/C/并购/未知）",
+ "amount_usd": "金额数字（美元，如 25000000；未知为 null）",
+ "domain": "所在领域/产品形态（如 客服SaaS/机器人/医疗，未知为空）"}
+只输出 JSON，禁止编造。金额注意换算 million/billion 为纯数字。"""
 
-def extract_ma(signal, timeout=None):
-    """M&A 3-field extraction for trigger_type='并购' news signals."""
+
+def _extract_fields(signal, system, timeout=None):
     import requests as rq
     from extractor import llm as llm_mod
     cfg = llm_mod.resolve_config("light")
@@ -93,7 +100,7 @@ def extract_ma(signal, timeout=None):
         json={
             "model": model,
             "messages": [
-                {"role": "system", "content": MA_SYSTEM},
+                {"role": "system", "content": system},
                 {"role": "user", "content": f"标题: {signal.title or ''}\n摘要: {(signal.description or '')[:1000]}"},
             ],
             "temperature": llm_mod.default_temperature(model),
@@ -105,6 +112,16 @@ def extract_ma(signal, timeout=None):
     resp.raise_for_status()
     body = resp.json()
     return json.loads(body["choices"][0]["message"]["content"])
+
+
+def extract_ma(signal, timeout=None):
+    """M&A 3-field extraction for trigger_type='并购' news signals."""
+    return _extract_fields(signal, MA_SYSTEM, timeout)
+
+
+def extract_funding(signal, timeout=None):
+    """融资四要素抽取 for trigger_type='融资' news signals."""
+    return _extract_fields(signal, FUNDING_SYSTEM, timeout)
 
 
 def extract_batch(session, source=None, limit=None, force=False, dry_run=False, use_llm=True):
@@ -138,18 +155,20 @@ def extract_batch(session, source=None, limit=None, force=False, dry_run=False, 
 
         if skip:
             stats["skipped"] += 1
-        elif (rec["trigger_type"] or "").startswith("并购") and use_llm and not dry_run:
-            # M&A 三要素抽取（题材雷达方向验证信号，量小成本低）
+        elif (rec["trigger_type"] or "").startswith(("并购", "融资")) and use_llm and not dry_run:
+            # 并购三要素 / 融资四要素抽取（题材雷达方向验证信号，量小成本低）
             try:
-                ma = extract_ma(sig)
-                if ma and (ma.get("acquirer") or ma.get("acquiree")):
-                    rec["ma_json"] = json.dumps(ma, ensure_ascii=False)
+                is_ma = rec["trigger_type"].startswith("并购")
+                fields = extract_ma(sig) if is_ma else extract_funding(sig)
+                key_field = "acquiree" if is_ma else "company"
+                if fields and (fields.get("acquirer") or fields.get(key_field)):
+                    rec["ma_json"] = json.dumps(fields, ensure_ascii=False)
                     stats["ma_ok"] = stats.get("ma_ok", 0) + 1
-                    if ma.get("acquiree"):
+                    if is_ma and fields.get("acquiree"):
                         from storage import Watchlist
                         session.add(Watchlist(
-                            name=ma["acquiree"], acquirer=ma.get("acquirer") or None,
-                            domain=ma.get("domain") or None,
+                            name=fields["acquiree"], acquirer=fields.get("acquirer") or None,
+                            domain=fields.get("domain") or None,
                             source_signal_id=sig.id,
                             note="被收购产品余波监控：用户抱怨涨价/停更/关停是高价值痛点"))
                 time.sleep(0.2)
