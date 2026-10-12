@@ -195,6 +195,9 @@ def load_window_members(session, weeks=4, window_end=None):
         # 其余新闻触发事件簇维持原状（news: 桶进榜）
         if s.source == "techcrunch":
             continue
+        # online_gigs 是平台监控/题材雷达（信息验证期，不是产品承诺），不上主榜
+        if s.source == "online_gigs":
+            continue
         if s.source == "news" and (getattr(e, "trigger_type", "") or "").startswith(("并购", "融资")):
             continue
         # prefilter-skipped rows with no rule P-level are dead for clustering

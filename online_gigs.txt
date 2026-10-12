@@ -1,0 +1,13 @@
+# 线上外快平台监控清单：name | 主页 | 资格/FAQ 页（可空）| 备注
+Outlier | https://outlier.ai | https://outlier.ai/faq | AI 训练
+DataAnnotation | https://www.dataannotation.tech | | AI 标注
+Prolific | https://www.prolific.com | https://www.prolific.com/participants | 问卷/研究
+Toloka | https://toloka.ai | https://toloka.ai/tolokers | AI 标注
+Appen | https://appen.com | https://crowdgen.com | AI 数据
+Remotasks | https://www.remotasks.com | | AI 标注（403 反爬，manual_review）
+Clickworker | https://www.clickworker.com | https://www.clickworker.com/clickworker | 微任务
+UserTesting | https://www.usertesting.com | https://www.usertesting.com/get-paid-to-test | 用户测试
+PlaytestCloud | https://www.playtestcloud.com | | 游戏测试
+Testbirds | https://www.testbirds.com |  | 测试
+百度众测 | https://test.baidu.com | | 中国平台
+龙猫数据 | http://www.longmaosoft.com | | 中国平台

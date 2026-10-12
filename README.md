@@ -27,6 +27,7 @@ This repository contains the data collection layer. All collectors use **officia
 | 融资新闻 | Google News 词（raises Series A/B 等 4 个），四要素抽取同并购机制 | 题材雷达不上主榜 |
 | YouTube | Data API v3（`YOUTUBE_API_KEY`，申请中）+ 无 key 降级频道 RSS（只采标题） | 痛点视频+评论 |
 | Discord 公开镜像 | AnswerOverflow/Linen（社区 opt-in 镜像），经 Wayback CDX 存档读取 | 支持频道 thread（痛点链路） |
+| 线上外快平台 | 各平台主页/FAQ 关键词抓取（`collectors/online_gigs.py`，清单 online_gigs.txt） | 平台监控（题材雷达，远程报告「线上外快」区块；信息验证期非独立产品） |
 | Hugging Face Datasets | Public Hub API (no key) | Trending/most-downloaded datasets (AI circle) |
 | Freelancer research queries | Official API (existing key) | Paid manual data assembly = data-platform demand |
 | Google News | RSS keyword search (no auth) | Trigger events: policy changes, price hikes, shortages, class-action settlements, shutdowns |

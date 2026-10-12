@@ -15,6 +15,25 @@ from storage import RawSignal, get_session
 
 log = logging.getLogger(__name__)
 
+def _gigs_section(session):
+    """线上外快平台状态表（source=online_gigs 题材雷达，变更高亮）。"""
+    rows = session.query(RawSignal).filter_by(source="online_gigs").all()
+    lines = ["## 线上外快平台监控（信息验证期，非独立产品承诺）", ""]
+    if not rows:
+        return "\n".join(lines + ["（暂无数据，待 collectors/online_gigs.py 首跑）"])
+    lines.append("| 平台 | 注册 | 中国 | 收款 | 时薪 | 任务类型 | 变更 |")
+    lines.append("|---|---|---|---|---|---|---|")
+    for r in rows:
+        raw = json.loads(r.raw_json or "{}")
+        changed = "🔴 状态变化" if raw.get("status_change") else ""
+        payout = "/".join(raw.get("payout") or []) or "未抓到"
+        rates = "、".join(raw.get("rates") or []) or "未抓到"
+        tasks = "、".join(raw.get("tasks") or [])[:40] or "未抓到"
+        lines.append(f"| {raw.get('platform', r.source_id)} | {raw.get('open', '?')} | "
+                     f"{raw.get('china', '?')} | {payout} | {rates} | {tasks} | {changed} |")
+    return "\n".join(lines)
+
+
 PROFILE_NOTE = """## 用户画像适配分析
 
 - **时区**：Worldwide 岗位多数要求欧美工作时间重叠（overlap），中国时区（UTC+8）与欧洲有 2-4 小时黄金重叠，与美国西海岸几乎无重叠——优先选 async-first 或 Europe-friendly 公司，纯 US-hours 岗位慎投。
@@ -75,7 +94,7 @@ def main():
     ]
     for i, (_, senior, skill, title, url, src) in enumerate(top, 1):
         lines.append(f"{i}. {'[senior] ' if senior else ''}{title}（{skill}）— {url}")
-    lines += ["", PROFILE_NOTE]
+    lines += ["", _gigs_section(s), "", PROFILE_NOTE]
     path = f"reports/remote_jobs_deep_{today.replace('-', '')}.md"
     with open(path, "w") as f:
         f.write("\n".join(lines))

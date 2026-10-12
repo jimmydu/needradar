@@ -10,7 +10,7 @@ from datetime import date, datetime, timedelta
 
 from collectors import (appstore, appstore_charts, betalist, cfpb, discord_ao, freelancer,
                         github, google_trends, googleplay_charts, hf_datasets,
-                        indiegogo, kaggle_ds, kickstarter, news_rss, reddit,
+                        indiegogo, kaggle_ds, kickstarter, news_rss, online_gigs, reddit,
                         reddit_rss, remotejobs, sam_gov, shopify_apps,
                         stackexchange, targeted_reviews, techcrunch, usaspending, youtube)
 from storage import get_session
@@ -37,6 +37,7 @@ COLLECTORS = [
     ("stackexchange", stackexchange),
     ("techcrunch", techcrunch),
     ("targeted_review", targeted_reviews),
+    ("online_gigs", online_gigs),
     ("discord_ao", discord_ao),
     ("github", github),
     ("google_trends", google_trends),

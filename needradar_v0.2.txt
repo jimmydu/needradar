@@ -144,6 +144,7 @@
 | Reddit 需求创意/币圈 | RSS（r/SomebodyMakeThis、r/AppIdeas、r/lightbulb；r/CryptoCurrency、r/defi 标 @radar） | P2–P3 / 题材雷达 | 需求版预过滤放行（无抱怨词但语义即需求，prefilter DEMAND_SUBS 白名单）；币圈战略约束：**中国监管红线+信任门槛+巨头墙，只监控不出手**，@radar 版 raw_json.radar_only 进监控层不上主榜 |
 | 融资新闻 | Google News 融资查询词（raises Series A/B、startup funding round 等 4 个） | 题材雷达 | 复用并购机制做四要素抽取（公司/轮次/金额/领域，同 extractions.ma_json），不进痛点主榜 |
 | agent 商业协议监控 | Google News 词（agentic commerce / AI agent payments / x402 / AP2 / agent checkout）+ Google Trends 单词 | 题材雷达 | 2026-10-12：用户否决清算平台本体（牌照/金融死门槛），仅监控垂直应用层信号生长，不进痛点主榜 |
+| 线上外快平台监控 | 各平台主页/FAQ 关键词规则抓取（12 平台清单 online_gigs.txt） | 题材雷达 | 2026-10-12：信息监控验证期（ referral 远期变现），不进痛点主榜；进远程工作深挖报告「线上外快」区块；Remotasks 403 反爬标记 manual_review；字段缺失标 manual_review |
 | Reddit 数据求源版 | RSS（r/datasets、r/opendata、r/datarequests） | P2–P3 | 复用 reddit_rss 采集器 |
 | Stack Exchange OpenData | 官方 API 免 key（300 次/天配额，增量+状态文件） | P3 | 投票数=需求强度；opendata 站流量小 |
 | Google Trends | pytrends 非官方接口，每日一次状态文件限频 | 辅助 | 词根×行业单词查询（组合查询实测零召回）；pytrends 与 urllib3 2.x 有兼容坑（retries 参数勿传） |

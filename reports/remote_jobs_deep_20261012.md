@@ -33,6 +33,23 @@
 9. [senior] Chime Financial, Inc: Sr. Instructional Designer, Learning Operations（design）— https://weworkremotely.com/remote-jobs/chime-financial-inc-sr-instructional-designer-learning-operations
 10. [senior] AssemblyAI: Senior Research Engineer（ai）— https://weworkremotely.com/remote-jobs/assemblyai-senior-research-engineer
 
+## 线上外快平台监控（信息验证期，非独立产品承诺）
+
+| 平台 | 注册 | 中国 | 收款 | 时薪 | 任务类型 | 变更 |
+|---|---|---|---|---|---|---|
+| Outlier | open | not_found | paypal | $500 | review、writing |  |
+| DataAnnotation | open | mentioned | 未抓到 | $20、$20-60、$25 – $40、$25 – $50、$40、$40 – $125 | annotation、labeling、review、writing |  |
+| Prolific | closed | not_found | paypal | $1、$2、$3、$5、$6/、$7 | data collection、survey、testing |  |
+| Toloka | open | not_found | payoneer/paypal | $5 | annotation、labeling、review、survey、testin |  |
+| Appen | open | not_found | payoneer/paypal | $100、$150、$160、$180、$400、$450 | annotation、labeling、review、translation | 🔴 状态变化 |
+| Remotasks | ? | ? | 未抓到 | 未抓到 | 未抓到 |  |
+| Clickworker | open | not_found | payoneer/paypal | 未抓到 | annotation、data collection、labeling、revi |  |
+| UserTesting | open | not_found | paypal | 未抓到 | review、survey、testing、user test |  |
+| PlaytestCloud | open | not_found | 未抓到 | $300 | review、survey、testing、writing |  |
+| Testbirds | open | not_found | 未抓到 | 未抓到 | review、survey、testing、user test |  |
+| 百度众测 | unknown | not_found | wise | 未抓到 | 未抓到 | 🔴 状态变化 |
+| 龙猫数据 | unknown | not_found | 未抓到 | 未抓到 | annotation、review |  |
+
 ## 用户画像适配分析
 
 - **时区**：Worldwide 岗位多数要求欧美工作时间重叠（overlap），中国时区（UTC+8）与欧洲有 2-4 小时黄金重叠，与美国西海岸几乎无重叠——优先选 async-first 或 Europe-friendly 公司，纯 US-hours 岗位慎投。
