@@ -17,3 +17,9 @@
 "new app helps"
 "launched app for"
 petition AND (app OR software OR online)
+# --- agent 商业协议监控（题材雷达，用户已否决清算平台本体，跟踪垂直应用层生长） ---
+"agentic commerce"
+"AI agent payments"
+"x402 protocol"
+"AP2" "agent payments"
+"agent checkout"
