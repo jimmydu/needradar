@@ -24,7 +24,9 @@ NODE_SCRIPT = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                            "..", "scripts", "gplay", "charts.mjs")
 COLLECTIONS = ["GROSSING", "TOP_PAID"]
 CATEGORIES = ["APPLICATION", "PRODUCTIVITY", "TOOLS", "HEALTH_AND_FITNESS",
-              "EDUCATION", "BUSINESS"]
+              "EDUCATION", "BUSINESS", "MEDICAL", "LIFESTYLE", "FINANCE",
+              "SHOPPING", "FOOD_AND_DRINK", "TRAVEL_AND_LOCAL", "SOCIAL",
+              "PHOTOGRAPHY"]
 CHART_NUM = 100
 REQUEST_INTERVAL = 2.0
 BLACKLIST_FILE = os.environ.get("INDIE_BLACKLIST_FILE", "./indie_blacklist.txt")

@@ -133,6 +133,19 @@ class PayerVerdict(Base):
     updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
 
 
+class TargetedApp(Base):
+    """定向差评采集清单：indie 成功 app（尤其 fast_rising）的 1-3 星评论
+    = 已验证付费意愿产品里没被满足的需求。"""
+    __tablename__ = "targeted_apps"
+
+    id = Column(Integer, primary_key=True)
+    app_id = Column(String(64), nullable=False)
+    store = Column(String(16), nullable=False)  # apple / google_play
+    name = Column(Text)
+    reason = Column(String(64))     # indie / fast_rising
+    added_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+
+
 class AppIndie(Base):
     """iTunes Lookup enrichment cache + indie heuristic per app."""
     __tablename__ = "app_indie"

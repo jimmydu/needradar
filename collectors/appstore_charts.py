@@ -22,6 +22,14 @@ GENRES = {  # None = overall
     "6026": "developer-tools",
     "6013": "health-fitness",
     "6017": "education",
+    "6020": "medical",
+    "6012": "lifestyle",
+    "6015": "finance",
+    "6024": "shopping",
+    "6023": "food-drink",
+    "6003": "travel",
+    "6005": "social",
+    "6008": "photo-video",
 }
 RSS_URL = "https://itunes.apple.com/us/rss/{feed}/limit=100{genre}/json"
 REQUEST_INTERVAL = 0.8

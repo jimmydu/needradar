@@ -15,7 +15,7 @@ from datetime import date, datetime, timedelta
 
 import requests
 
-from storage import AppIndie, RawSignal, get_session
+from storage import AppIndie, RawSignal, TargetedApp, get_session
 
 log = logging.getLogger(__name__)
 
@@ -135,7 +135,64 @@ def revenue_tier(rank):
     return "<10万美元（粗估）"
 
 
-def emit_indie_signals(session, indies, snap_date):
+def compute_movers(session):
+    """Rank-delta analysis across chart snapshots (appstore_charts +
+    gplay_charts). fast_rising = jumped >=50 positions or entered the top-100
+    from outside between snapshots. Games excluded (user builds software).
+    Returns {app_id: {"name":…, "store":…, "from":…, "to":…}}."""
+    movers = {}
+    per_app = {}
+    for r in session.query(RawSignal).filter(
+            RawSignal.source.in_(("appstore_charts", "gplay_charts"))):
+        raw = json.loads(r.raw_json or "{}")
+        app_id = raw.get("app_id") or raw.get("appId")
+        rank, snap, feed = raw.get("rank"), raw.get("snapshot_date"), raw.get("feed")
+        genre = (raw.get("genre") or raw.get("category") or "").lower()
+        if not app_id or not rank or not snap:
+            continue
+        if "game" in genre:
+            continue
+        store = "google_play" if r.source == "gplay_charts" else "apple"
+        per_app.setdefault(app_id, {"name": r.title, "store": store, "points": []})
+        if feed and "grossing" in feed:
+            per_app[app_id]["points"].append((snap, rank))
+    for app_id, d in per_app.items():
+        pts = sorted(d["points"])
+        if len(pts) < 2:
+            continue
+        (d0, r0), (d1, r1) = pts[0], pts[-1]
+        if r0 - r1 >= 50:  # rank number down = climbing
+            movers[app_id] = {"name": d["name"], "store": d["store"],
+                              "from_rank": r0, "to_rank": r1,
+                              "window": f"{d0}→{d1}"}
+    return movers
+
+
+def populate_targeted_apps(session, indies, movers):
+    """indie 成功 app（含 fast_rising）入定向差评采集清单。"""
+    added = 0
+    now = datetime.utcnow()
+    for x in indies:
+        app_id = str(x["app_id"])
+        is_mover = app_id in movers
+        if not is_mover and not (x["rank"] and x["rank"] <= 100):
+            continue  # 清单只收爬榜者和总榜头部 indie，控制每日采集量
+        reason = "fast_rising" if is_mover else "indie"
+        existing = session.query(TargetedApp).filter_by(
+            app_id=app_id, store="apple").first()
+        if existing:
+            if reason == "fast_rising" and existing.reason != reason:
+                existing.reason = reason
+            continue
+        session.add(TargetedApp(app_id=app_id, store="apple",
+                                name=x["info"].name, reason=reason, added_at=now))
+        added += 1
+    session.commit()
+    log.info("targeted_apps: %d added (total %d)", added,
+             session.query(TargetedApp).count())
+
+
+def emit_indie_signals(session, indies, snap_date, movers=None):
     """Convert indie-report results into raw_signals (source='appstore_indie',
     signal_type='成功样本') so they flow through clustering/ranking. Existing
     rows get their rank history updated instead of skipped."""
@@ -161,6 +218,8 @@ def emit_indie_signals(session, indies, snap_date):
             "user_rating_count": info.user_rating_count,
             "indie_score": info.indie_score, "seller_url": info.seller_url,
             "price": info.price,
+            "fast_rising": x["app_id"] in (movers or {}),
+            "mover_detail": (movers or {}).get(x["app_id"]),
         }
         if prev:
             old = json.loads(prev.raw_json or "{}")
@@ -237,7 +296,10 @@ def main():
                        "feeds": b["feeds"], "info": info})
     indies.sort(key=lambda x: (x["rank"] is None, x["rank"] or 999, -x["info"].indie_score))
     log.info("indie pass: %d, excluded: %d", len(indies), excluded)
-    sig_stats = emit_indie_signals(session, indies, snap_date)
+    movers = compute_movers(session)
+    log.info("fast_rising movers: %d", len(movers))
+    populate_targeted_apps(session, indies, movers)
+    sig_stats = emit_indie_signals(session, indies, snap_date, movers)
     log.info("appstore_indie signals: %s", sig_stats)
 
     today = date.today().isoformat()

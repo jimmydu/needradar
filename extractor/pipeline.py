@@ -23,6 +23,7 @@ LLM_POLICY = {
     "reddit": "always",
     "freelancer": "always",
     "manual": "always",
+    "targeted_review": "always",  # 已预筛 ≤3 星
     # 行业研究/数据平台方向的新源：规则足够（金额/票数/热度），LLM 只给
     # stackexchange（问题正文有真痛点文本）；其余一律规则
     "stackexchange": "always",

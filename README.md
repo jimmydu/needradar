@@ -25,7 +25,8 @@ This repository contains the data collection layer. All collectors use **officia
 | Hugging Face Datasets | Public Hub API (no key) | Trending/most-downloaded datasets (AI circle) |
 | Freelancer research queries | Official API (existing key) | Paid manual data assembly = data-platform demand |
 | Google News | RSS keyword search (no auth) | Trigger events: policy changes, price hikes, shortages, class-action settlements, shutdowns |
-| App Store charts | Apple RSS (top-grossing + top-paid × key genres) + iTunes Lookup enrichment | Indie high-revenue apps (`run_indie_report.py`, `indie_blacklist.txt`) |
+| App Store charts | Apple RSS (top-grossing + top-paid × 14 genres) + iTunes Lookup enrichment | Indie high-revenue apps (`run_indie_report.py`, `indie_blacklist.txt`) + rank-mover tracking（fast_rising）+ 定向差评采集（targeted_apps 清单 → collectors/targeted_reviews.py，GPlay 用 google-play-scraper reviews） |
+| Google Play charts | Node `google-play-scraper`（`scripts/gplay`，需 `cd scripts/gplay && npm install`） | GROSSING/TOP_PAID × 14 品类快照 + gplay_indie 成功样本 |
 
 Data handling: read-only collection, aggregate statistical analysis only, no redistribution of raw content, no user profiling. Collected records are stored in a private local database and refreshed per each platform's API terms.
 
