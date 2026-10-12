@@ -24,6 +24,7 @@ LLM_POLICY = {
     "freelancer": "always",
     "manual": "always",
     "hackernews": "always",  # Ask HN 求助帖/Show HN 抱怨
+    "discord_ao": "always",  # Discord 镜像 thread（痛点链路）
     "targeted_review": "always",  # 已预筛 ≤3 星
     # 行业研究/数据平台方向的新源：规则足够（金额/票数/热度），LLM 只给
     # stackexchange（问题正文有真痛点文本）；其余一律规则

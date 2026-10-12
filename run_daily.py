@@ -8,7 +8,7 @@ import argparse
 import logging
 from datetime import date, datetime, timedelta
 
-from collectors import (appstore, appstore_charts, betalist, cfpb, freelancer,
+from collectors import (appstore, appstore_charts, betalist, cfpb, discord_ao, freelancer,
                         github, google_trends, googleplay_charts, hf_datasets,
                         indiegogo, kaggle_ds, kickstarter, news_rss, reddit,
                         reddit_rss, remotejobs, sam_gov, shopify_apps,
@@ -37,6 +37,7 @@ COLLECTORS = [
     ("stackexchange", stackexchange),
     ("techcrunch", techcrunch),
     ("targeted_review", targeted_reviews),
+    ("discord_ao", discord_ao),
     ("github", github),
     ("google_trends", google_trends),
     ("kaggle", kaggle_ds),

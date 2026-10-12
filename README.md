@@ -26,6 +26,7 @@ This repository contains the data collection layer. All collectors use **officia
 | Reddit 需求创意/币圈 | reddit_rss 管道加版；币圈 @radar 后缀仅监控不上主榜（中国监管红线，战略约束见 PRD） | 需求创意/币圈监控 |
 | 融资新闻 | Google News 词（raises Series A/B 等 4 个），四要素抽取同并购机制 | 题材雷达不上主榜 |
 | YouTube | Data API v3（`YOUTUBE_API_KEY`，申请中）+ 无 key 降级频道 RSS（只采标题） | 痛点视频+评论 |
+| Discord 公开镜像 | AnswerOverflow/Linen（社区 opt-in 镜像），经 Wayback CDX 存档读取 | 支持频道 thread（痛点链路） |
 | Hugging Face Datasets | Public Hub API (no key) | Trending/most-downloaded datasets (AI circle) |
 | Freelancer research queries | Official API (existing key) | Paid manual data assembly = data-platform demand |
 | Google News | RSS keyword search (no auth) | Trigger events: policy changes, price hikes, shortages, class-action settlements, shutdowns |
