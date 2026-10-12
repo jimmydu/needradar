@@ -80,11 +80,21 @@ def render_report(survivors, filtered, excluded_big, usage, weeks, run_date):
                 f"- **最终分：{norm}**（榜首=100 归一化；原始分 {r['final_score']}，"
                 "= WPS × 置信度 × 可进入性 × 代码可行性 × 门槛高度 × 付费对象质量）",
                 f"- 切入点：{r['entry_point']}",
-                "- 竞品：" + ("、".join(r["competitors"]) if r.get("competitors") else "待补充（LLM 不可用或未识别）"),
                 f"- 证据：{st['n']} 条信号，来源 {json.dumps(dict(st['sources']), ensure_ascii=False)}，"
                 f"P 级分布 {json.dumps({str(k): v for k, v in st['p_dist'].items()})}，"
                 f"中位金额 {fmt_amount(st['median_amount'])}",
             ]
+            comps = r.get("comps_detail") or []
+            if comps:
+                lines.append("- 竞品（缺点 = 机会窗口）：")
+                for c in comps:
+                    if c["weaknesses"]:
+                        for w in c["weaknesses"]:
+                            lines.append(f"  - {c['name']}｜{w['text']}〔{w['tag']}〕")
+                    else:
+                        lines.append(f"  - {c['name']}｜缺点待补充")
+            else:
+                lines.append("- 竞品：" + ("、".join(r["competitors"]) if r.get("competitors") else "待补充（LLM 不可用或未识别）"))
             if r["quotes"]:
                 lines.append("- 原文引用：")
                 for q in r["quotes"]:

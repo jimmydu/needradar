@@ -375,6 +375,78 @@ def _llm_entry_points(results, usage, batch=8):
             log.warning("entry point batch failed: %s", e)
 
 
+COMP_WEAKNESS_SYSTEM = """你是竞品分析员。给定编号主题及其竞品名，为每个竞品写 1-2 条已知常见缺点/抱怨
+（如太贵、功能缺失、体验差、隐私争议）。只写广为流传的公开弱点，不确定就写少。
+输出 JSON：{"weaknesses": [{"id": 序号, "comp": "竞品名", "weak": ["缺点1", "缺点2"]}, ...]}。
+禁止编造具体数字或事件。中文输出。"""
+
+
+def _comp_real_weaknesses(session, comp_name, max_items=2):
+    """真实证据优先：在库里模糊匹配竞品名的差评信号（appstore ≤2星等）。
+    返回 [{text, tag}]，tag 形如 '真实差评/App Store 2星'。"""
+    needle = comp_name.strip().lower()
+    if len(needle) < 3 or needle in ("通用 ai agent",):
+        return []
+    rows = (session.query(RawSignal, Extraction)
+            .join(Extraction, Extraction.signal_id == RawSignal.id)
+            .filter(RawSignal.source.in_(("appstore", "reddit_rss", "targeted_review",
+                                          "discord_ao", "hackernews")))
+            .filter(RawSignal.rating.isnot(None))
+            .filter(RawSignal.rating <= 2)
+            .all())
+    out = []
+    for s, e in rows:
+        hay = " ".join(filter(None, [
+            s.title or "", (s.description or "")[:2000],
+            json.loads(s.raw_json or "{}").get("app_name") or "",
+        ])).lower()
+        if needle not in hay:
+            continue
+        text = e.pain_point or (s.description or "")[:150]
+        tag = f"真实差评/{s.source} {s.rating}星"
+        if text and {"text": text, "tag": tag} not in out:
+            out.append({"text": text[:150], "tag": tag})
+        if len(out) >= max_items:
+            break
+    return out
+
+
+def _comp_weaknesses(session, results, usage):
+    """给每个存活簇的竞品补缺点：真实差评优先，缺则一次 LLM 批量推测（标注来源）。"""
+    pending = []  # (cluster_idx_in_pending, comp_name)
+    for r in results:
+        detail = []
+        for comp in r.get("competitors") or []:
+            real = _comp_real_weaknesses(session, comp)
+            detail.append({"name": comp, "weaknesses": real})
+            if not real:
+                pending.append((r, comp))
+        r["comps_detail"] = detail
+    if not pending:
+        return
+    lines = []
+    for n, (r, comp) in enumerate(pending, 1):
+        lines.append(f"{n}. 主题: {r['summary'][:100]}｜竞品: {comp}")
+    for start in range(0, len(lines), 10):
+        chunk = lines[start:start + 10]
+        try:
+            parsed, ptok, ctok = _chat_json(COMP_WEAKNESS_SYSTEM, "\n".join(chunk))
+            usage["calls"] += 1
+            usage["prompt_tokens"] += ptok
+            usage["completion_tokens"] += ctok
+            by_id = {m.get("id"): m for m in parsed.get("weaknesses", [])}
+            for n, (r, comp) in enumerate(pending[start:start + 10], start + 1):
+                m = by_id.get(n)
+                if not m:
+                    continue
+                weaks = [w for w in (m.get("weak") or []) if isinstance(w, str)][:2]
+                for d in r["comps_detail"]:
+                    if d["name"] == comp and not d["weaknesses"]:
+                        d["weaknesses"] = [{"text": w[:150], "tag": "LLM推测"} for w in weaks]
+        except Exception as e:
+            log.warning("comp weakness batch failed: %s", e)
+
+
 def run(session, weeks=4, use_llm=True, dry_run=False, run_date=None):
     usage = {"calls": 0, "prompt_tokens": 0, "completion_tokens": 0}
     run_date = run_date or date.today().isoformat()
@@ -534,6 +606,9 @@ def run(session, weeks=4, use_llm=True, dry_run=False, run_date=None):
         r["entry_point"] = _rule_entry_point(r)
     if use_llm and _llm_configured():
         _llm_entry_points(survivors[:50], usage)
+    # 竞品缺点：真实差评优先，缺则 LLM 推测（标注来源）
+    if use_llm and _arbitration_ready():
+        _comp_weaknesses(session, survivors[:50], usage)
 
     if not dry_run:
         session.query(Cluster).filter(Cluster.run_date == run_date).delete()
